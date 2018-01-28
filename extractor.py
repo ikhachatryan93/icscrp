@@ -29,7 +29,7 @@ def get_url(params, index):
 
 
 def extract(url):
-    print("Obtaining information for: {}".format(url))
+    logging.info("Obtaining information for: {}".format(url))
     extracted_data = ico_page.extract(url, Configs.get("threads"))
 
     # utilities.append_into_file("done_list.txt", keyword)
@@ -47,4 +47,4 @@ def main():
 
 if __name__ == "__main__":
     configure_logging()
-    main()
+    sys.exit(main())

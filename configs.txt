@@ -11,7 +11,7 @@ browsers = 1
 driver = firefox
 
 # should be lxml or html5lib
-html_parser = lxml
+html_parser = html5lib
 
 # should be file or stream
 logging_handler = stream
@@ -21,7 +21,7 @@ output_format = excel
 
 # if enabled, pagination will be disabled, and the elements should be extracted from first page only
 # this functionality is added for debugging
-testing = false
+testing = true
 
 # max number of items to be extracted. for debugging
 max_items_extract = 5
@@ -40,7 +40,7 @@ wait_after_pagination = 2
 
 
 # if "use_selenium" is specified then pagination attribute should be xpath or class
-pagination_xpath=
+pagination_xpath =
 pagination_tag = a
 pagination_attribute = class
 pagination_attribute_value = next
@@ -48,9 +48,10 @@ pagination_attribute_value = next
 
 # html information for extracting listing urls
 [listings]
-listing_tag = div
+listing_tag = a
 listing_attribute = class
-listing_attribute_value = image_box
+listing_attribute_value = image
+
 
 # html information regarding profile fields
 [profile items xpaths]

@@ -58,6 +58,8 @@ def click_next_pagination(driver):
 
 
 click_next_pagination.counter = 0
+domain = get_domain(Configs.get('website_url'))
+
 
 def get_item_urls_bs4(url):
     listing_tag = Configs.get('listing_tag')
@@ -69,11 +71,10 @@ def get_item_urls_bs4(url):
     pg_attribute_value = Configs.get('pagination_attribute_value')
 
     bs = load_page(url)
-    domain = get_domain(Configs.get('website_url'))
 
     # finding next page url
     pg = bs.find(pg_tag, {pg_attribute: pg_attribute_value})
-    if pg.has_attribute['href']:
+    if pg and pg.has_attr('href'):
         path = pg['href']
         next_page_url = urljoin(domain, path)
     else:
@@ -84,18 +85,18 @@ def get_item_urls_bs4(url):
         return []
 
     urls = []
-    listings = bs.find_all(listing_tag, {listing_attribute: listing_attribute_value})
+    listings = bs.find_all(listing_tag, {listing_attribute: listing_attribute_value}, href=True)
     if listings:
         for entry in listings:
             path = entry['href']
             urls.append(urljoin(domain, path))
 
+    # extract only first page if testing is on
+    if Configs.get('testing'):
+        return urls
+
     urls += get_item_urls_bs4(next_page_url)
-
-
-
-
-    pass
+    return urls
 
 
 def get_item_urls(url):
@@ -116,10 +117,9 @@ def get_item_urls(url):
     wait_before_paging = Configs.get('wait_before_pagination')
     wait_after_paging = Configs.get('wait_after_pagination')
 
-    html_parser = Configs.get('html_parser')
     debug_mode = Configs.get("testing")
     while True:
-        soup = BeautifulSoup(driver.page_source, html_parser)
+        soup = load_page(driver.page_source)
         items = soup.findAll(listing_tag, {listing_attribute, listing_attribute_value})
         for item in items:
             try:
@@ -178,14 +178,15 @@ def extract_item(url, items_info, try_again=True):
 
 
 def extract(url, threads_num):
-    if Configs.get("use_selenium"):
+    logging.info('Extracting all listing urls...')
+    use_selenium = Configs.get('use_selenium')
+    if use_selenium:
         shop_urls = get_item_urls(url)
     else:
         shop_urls = get_item_urls_bs4(url)
 
-    setup_drivers()
     items_info = []
-
+    setup_drivers()
     max_extr_items = Configs.get("max_items_extract")
 
     trds = []

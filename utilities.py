@@ -64,7 +64,7 @@ class Configs:
         Configs.config['item_ids'] = dict(config_parser.items('profile items ids'))
         Configs.config['item_xpaths'] = dict(config_parser.items('profile items xpaths'))
 
-        Configs.read = True
+        Configs.parsed = True
 
     @staticmethod
     def get(key, check_for_none=True):
@@ -261,7 +261,7 @@ def load_page(url):
     response = http.request('GET', url, headers=header)
 
     # return bs4.BeautifulSoup(response.data, 'html5lib')
-    return bs4.BeautifulSoup(response.data, 'lxml')
+    return bs4.BeautifulSoup(response.data, Configs.get("html_parser"))
 
 
 # Clicks element
