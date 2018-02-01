@@ -1,4 +1,7 @@
-import configparser
+from configobj import ConfigObj, flatten_errors
+
+from validate import Validator
+from validate import VdtValueError
 import logging
 import platform
 import json
@@ -24,45 +27,87 @@ sys.path.append(dir_path + "modules")
 sys.path.append(dir_path + "drivers")
 
 
-class Configs:
-    file = r"./configs.txt"
+class ConfigException(Exception):
+    pass
 
-    config = {"threads": 1, "browser": "chrome"}
+
+class Configs:
+    spec = '''[scraper]
+    threads = integer(min=1, max=30, default=1)
+    browsers = integer(min=1, max=30, default=1)
+    driver = options('firefox', 'chrome', 'phantomjs', default='firefox')
+    scraper_engine = options('bs4', 'selenium', default='selenium')
+    html_parser = options('html5lib', 'lxml', 'html.parser', default='html5lib')
+    logging_handler = options('stream', 'file', default='stream')
+    output_format = options('excel', 'json', default='excel')
+    testing = boolean(default=False)
+    max_items_extract = integer(min=1, max=1000, default=5)
+    
+    [pagination]
+    pagination_engine = options('bs4', 'selenium', default='selenium')
+    wait_before_pagination = integer(min=0, max=10, default=1)
+    wait_after_pagination = integer(min=0, max=10, default=1)
+    '''
+
+    file = r"configs.ini"
+
+    config = {}
     parsed = False
 
     @staticmethod
-    def parse_config_file():
-        config_parser = configparser.RawConfigParser()
-        config_parser.read(Configs.file)
+    def check_config_file(cfg):
+        results = cfg.validate(Validator(), copy=True)
 
+        for entry in flatten_errors(cfg, results):
+
+            [sectionList, key, error] = entry
+            if not error:
+                msg = "The parameter %s was not in the config file\n" % key
+                msg += "Please check to make sure this parameter is present and there are no mis-spellings."
+                logging.error(msg)
+
+            if key is not None:
+                if isinstance(error, VdtValueError):
+                    optionString = cfg.configspec[key]
+                    msg = "The parameter %s was set to %s which is not one of the allowed values\n" % (
+                        key, cfg[key])
+                    msg += "Please set the value to be in %s" % optionString
+                    logging.error(msg)
+
+    @staticmethod
+    def parse_config_file():
+        config_parser = ConfigObj(Configs.file, configspec=Configs.spec.split('\n'), unrepr=True, interpolation=False)
+        Configs.check_config_file(config_parser)
         # scraper configs
-        Configs.config['driver'] = config_parser.get('scraper', 'driver')
-        Configs.config['html_parser'] = config_parser.get('scraper', 'html_parser')
-        Configs.config['logging_handler'] = config_parser.get('scraper', 'logging_handler')
-        Configs.config['threads'] = config_parser.getint('scraper', 'threads')
-        Configs.config['output_format'] = config_parser.get('scraper', 'output_format')
-        Configs.config['testing'] = config_parser.getboolean('scraper', 'testing')
-        Configs.config['max_browsers'] = config_parser.getint('scraper', 'browsers')
-        Configs.config['max_items_extract'] = config_parser.getint('scraper', 'max_items_extract')
-        Configs.config['website_url'] = config_parser.get('scraper', 'website_url')
+        Configs.config['driver'] = config_parser['scraper']['driver']
+        Configs.config['scraper_engine'] = config_parser['scraper']['scraper_engine']
+        Configs.config['html_parser'] = config_parser['scraper']['html_parser']
+        Configs.config['logging_handler'] = config_parser['scraper']['logging_handler']
+        Configs.config['threads'] = config_parser['scraper']['threads']
+        Configs.config['output_format'] = config_parser['scraper']['output_format']
+        Configs.config['testing'] = bool(config_parser['scraper']['testing'])
+        Configs.config['max_browsers'] = config_parser['scraper']['browsers']
+        Configs.config['max_items_extract'] = config_parser['scraper']['max_items_extract']
+        Configs.config['website_url'] = config_parser['scraper']['website_url']
 
         # pagination
-        Configs.config['use_selenium'] = config_parser.getboolean('pagination', 'use_selenium')
-        Configs.config['wait_before_pagination'] = config_parser.getint('pagination', 'wait_before_pagination')
-        Configs.config['wait_after_pagination'] = config_parser.getint('pagination', 'wait_after_pagination')
-        Configs.config['pagination_tag'] = config_parser.get('pagination', 'pagination_tag')
-        Configs.config['pagination_attribute'] = config_parser.get('pagination', 'pagination_attribute')
-        Configs.config['pagination_attribute_value'] = config_parser.get('pagination', 'pagination_attribute_value')
-        Configs.config['pagination_xpath'] = config_parser.get('pagination', 'pagination_xpath')
+        Configs.config['pagination_engine'] = config_parser['pagination']['pagination_engine']
+        Configs.config['wait_before_pagination'] = config_parser['pagination']['wait_before_pagination']
+        Configs.config['wait_after_pagination'] = config_parser['pagination']['wait_after_pagination']
+        Configs.config['pagination_tag'] = config_parser['pagination']['pagination_tag']
+        Configs.config['pagination_attribute'] = config_parser['pagination']['pagination_attribute']
+        Configs.config['pagination_attribute_value'] = config_parser['pagination']['pagination_attribute_value']
+        Configs.config['pagination_xpath'] = config_parser['pagination']['pagination_xpath']
 
         # listings
-        Configs.config['listing_tag'] = config_parser.get('listings', 'listing_tag')
-        Configs.config['listing_attribute'] = config_parser.get('listings', 'listing_attribute')
-        Configs.config['listing_attribute_value'] = config_parser.get('listings', 'listing_attribute_value')
+        Configs.config['listing_tag'] = config_parser['listings']['listing_tag']
+        Configs.config['listing_attribute'] = config_parser['listings']['listing_attribute']
+        Configs.config['listing_attribute_value'] = config_parser['listings']['listing_attribute_value']
 
         # profile items
-        Configs.config['item_ids'] = dict(config_parser.items('profile items ids'))
-        Configs.config['item_xpaths'] = dict(config_parser.items('profile items xpaths'))
+        Configs.config['item_ids'] = config_parser['profile item id']
+        Configs.config['item_xpaths'] = config_parser['profile item xpath']
+        Configs.config['args_for_find'] = config_parser['bs4 find args']
 
         Configs.parsed = True
 

@@ -8,7 +8,7 @@ from utilities import configure_logging
 from utilities import write_output
 from utilities import Configs
 
-import ico_page
+import listings
 
 dir_path = path.dirname(path.realpath(__file__))
 sys.path.insert(0, dir_path + sep + "drivers")
@@ -30,7 +30,7 @@ def get_url(params, index):
 
 def extract(url):
     logging.info("Obtaining information for: {}".format(url))
-    extracted_data = ico_page.extract(url, Configs.get("threads"))
+    extracted_data = listings.extract(url, Configs.get("threads"))
 
     # utilities.append_into_file("done_list.txt", keyword)
     return extracted_data
@@ -42,7 +42,7 @@ def main():
     url = Configs.get("website_url")
     items_info += extract(url)
     logging.info("Writing output file")
-    write_output("output_items.xlsx", items_info)
+    #write_output("output_items.xlsx", items_info)
 
 
 if __name__ == "__main__":

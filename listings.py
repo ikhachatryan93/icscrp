@@ -11,7 +11,7 @@ from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup
 from urllib.request import urljoin
 
-from ico_profile import Item
+from profile import Item
 
 from utilities import Configs
 from utilities import setup_browser
@@ -160,33 +160,47 @@ def get_free_driver():
                 return drivers[i]["driver"], i
 
 
-def extract_item(url, items_info, try_again=True):
-    driver, i = get_free_driver()
-    driver.get(url)
-    time.sleep(1)
+def extract_item_with_bs4(url, items_info, try_again=True):
     try:
-        item = Item(driver)
+        item = Item(url, bs=load_page(url))
         item.extract()
         items_info.append(item.info)
     except Exception as e:
         logging.critical(str(e) + ". while getting information from " + url)
         if try_again:
             logging.info("Trying again")
-            extract_item(url, items_info, try_again=False)
+            extract_item_with_bs4(url, items_info, try_again=False)
+
+
+def extract_item_with_selenium(url, items_info, try_again=True):
+    driver, i = get_free_driver()
+    driver.get(url)
+    time.sleep(1)
+    try:
+        item = Item(url, driver=driver)
+        item.extract()
+        items_info.append(item.info)
+    except Exception as e:
+        logging.critical(str(e) + ". while getting information from " + url)
+        if try_again:
+            logging.info("Trying again")
+            extract_item_with_selenium(url, items_info, try_again=False)
 
     drivers[i]["status"] = "free"
 
 
 def extract(url, threads_num):
     logging.info('Extracting all listing urls...')
-    use_selenium = Configs.get('use_selenium')
-    if use_selenium:
+    engine = Configs.get('pagination_engine')
+    if engine == 'selenium':
         shop_urls = get_item_urls(url)
+        setup_drivers()
+        extractor = 'extract_item_with_selenium'
     else:
         shop_urls = get_item_urls_bs4(url)
+        extractor = 'extract_item_with_bs4'
 
     items_info = []
-    setup_drivers()
     max_extr_items = Configs.get("max_items_extract")
 
     trds = []
@@ -202,7 +216,7 @@ def extract(url, threads_num):
         sys.stdout.write("\r[Extracting: {}/{}]".format(i, total))
         sys.stdout.flush()
         time.sleep(0.3)
-        t = threading.Thread(target=extract_item, args=(url, items_info))
+        t = threading.Thread(target=eval(extractor), args=(url, items_info))
         t.daemon = True
         t.start()
         trds.append(t)
