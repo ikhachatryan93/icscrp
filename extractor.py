@@ -1,50 +1,67 @@
 #! /bin/env python
-from os import path, sep
-import sys
-import platform
+import argparse
 import logging
+import sys
 
+from mysql_wrapper import MySQL
+
+from utilities import add_local_paths
 from utilities import configure_logging
-from utilities import write_output
 from utilities import Configs
 
-import listings
+from scraper import IcoBench
+from scraper import Scraper
 
-dir_path = path.dirname(path.realpath(__file__))
-sys.path.insert(0, dir_path + sep + "drivers")
-sys.path.insert(0, dir_path + sep + "modules")
-
-try:
-    from pyvirtualdisplay import Display
-
-    if "Linux" in platform.system():
-        display = Display(visible=1, size=(800, 600))
-        display.start()
-except:
-    pass
+import traceback
 
 
-def get_url(params, index):
-    return params["urls"][index]
+def parse_arguments():
+    parser = argparse.ArgumentParser()
 
+    parser.add_argument('--hostname', type=str, help='Host where the database server is located')
+    parser.add_argument('--port', type=int, help='MySQL port to use, default is usually OK. (default: 3306)')
+    parser.add_argument('--user', type=str, help='Username to log in as')
+    parser.add_argument('--password', type=str, help='Password to use')
+    parser.add_argument('--db', type=str, help='Database to use, None to not use a particular one')
 
-def extract(url):
-    logging.info("Obtaining information for: {}".format(url))
-    extracted_data = listings.extract(url, Configs.get("threads"))
+    args = parser.parse_args()
 
-    # utilities.append_into_file("done_list.txt", keyword)
-    return extracted_data
+    return args.hostname, args.port, args.user, args.password, args.db
 
 
 def main():
-    items_info = []
+    data = []
+    #try:
+    scraper = IcoBench(Configs.get('max_threads'), Configs.get('max_browsers'))
+    data = scraper.scrape_website()
+    import utilities
+    utilities.write_to_excel("out.xlsx",data)
+    data = []
+    #except:
+    #    logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    #    exit(1)
 
-    url = Configs.get("website_url")
-    items_info += extract(url)
-    logging.info("Writing output file")
-    #write_output("output_items.xlsx", items_info)
+    pass
+
+    # final_data = None
+    # try:
+    #    final_data = data_processor.merge_data(data)
+    # except Exception as e:
+    #    logging.error(str(e))
+    #    exit(2)
+
+    # try:
+    #    host, port, user, password, db = parse_arguments()
+    #    mysql_db = MySQL(host, port, user, password, db)
+    #    mysql_db.connect()
+    #    mysql_db.insert(final_data)
+    #    mysql_db.disconnect()
+    # except Exception as e:
+    #    logging.error(str(e))
+    #    exit(3)
 
 
 if __name__ == "__main__":
     configure_logging()
+    add_local_paths()
     sys.exit(main())

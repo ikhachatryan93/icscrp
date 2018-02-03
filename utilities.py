@@ -6,6 +6,10 @@ import logging
 import platform
 import json
 import sys
+import urllib
+
+from urllib import request
+from urllib.parse import urlsplit
 
 from os import sep, path, remove
 
@@ -15,20 +19,6 @@ from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
 
 import bs4
-import urllib3
-
-from urllib.parse import urlsplit
-
-http = urllib3.PoolManager()
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-dir_path = path.dirname(path.realpath(__file__))
-sys.path.append(dir_path + "modules")
-sys.path.append(dir_path + "drivers")
-
-
-class ConfigException(Exception):
-    pass
 
 
 class Configs:
@@ -83,12 +73,11 @@ class Configs:
         Configs.config['scraper_engine'] = config_parser['scraper']['scraper_engine']
         Configs.config['html_parser'] = config_parser['scraper']['html_parser']
         Configs.config['logging_handler'] = config_parser['scraper']['logging_handler']
-        Configs.config['threads'] = config_parser['scraper']['threads']
         Configs.config['output_format'] = config_parser['scraper']['output_format']
         Configs.config['testing'] = bool(config_parser['scraper']['testing'])
-        Configs.config['max_browsers'] = config_parser['scraper']['browsers']
+        Configs.config['max_threads'] = int(config_parser['scraper']['threads'])
+        Configs.config['max_browsers'] = int(config_parser['scraper']['browsers'])
         Configs.config['max_items_extract'] = config_parser['scraper']['max_items_extract']
-        Configs.config['website_url'] = config_parser['scraper']['website_url']
 
         # pagination
         Configs.config['pagination_engine'] = config_parser['pagination']['pagination_engine']
@@ -126,8 +115,8 @@ class Configs:
 
 
 def get_domain(url):
+    print(url)
     domain = "{0.scheme}://{0.netloc}/".format(urlsplit(url))
-    assert domain
     return domain
 
 
@@ -137,6 +126,7 @@ def configure_logging():
     logFormatter = logging.Formatter("%(filename)s:%(lineno)s %(asctime)s [%(levelname)-5.5s]  %(message)s")
 
     if "file" in str(Configs.get("logging_handler")):
+        dir_path = path.dirname(path.realpath(__file__))
         filename = dir_path + sep + "scraper.log"
         remove(filename) if path.exists(filename) else None
         handler = logging.FileHandler(filename=filename)
@@ -146,11 +136,13 @@ def configure_logging():
     handler.setFormatter(logFormatter)
     rootLogger.addHandler(handler)
     rootLogger.setLevel(logging.INFO)
+    return rootLogger
 
 
 def setup_browser(browser=""):
     if browser == "":
         browser = Configs.get("driver")
+    dir_path = path.dirname(path.realpath(__file__))
     bpath = dir_path + sep + "drivers" + sep + browser
 
     if "Windows" in platform.system():
@@ -301,12 +293,35 @@ def write_lines_to_file(name, urls):
                 print(str(e))
 
 
-def load_page(url):
-    header = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1'}
-    response = http.request('GET', url, headers=header)
+import urllib3
 
-    # return bs4.BeautifulSoup(response.data, 'html5lib')
-    return bs4.BeautifulSoup(response.data, Configs.get("html_parser"))
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+user_agent = {'user-agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
+
+
+def load_page(url):
+    try:
+        http = urllib3.PoolManager(1, headers=user_agent, timeout=10)
+        r = http.request('GET', url)
+    except SystemError as e:
+        if 'error return without exception set' not in str(e):
+            raise SyntaxError(e)
+
+    return bs4.BeautifulSoup(r.data.decode('utf-8'), 'html5lib')
+
+
+def load_page1(url):
+    req = urllib.request.Request(
+        url=url,
+        data=None,
+        headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'
+        }
+    )
+
+    data = urllib.request.urlopen(req, timeout=10)
+
+    return bs4.BeautifulSoup(data.read().decode('utf-8'), 'html5lib')
 
 
 # Clicks element
@@ -324,3 +339,20 @@ def click(driver, elem):
             actions.perform()
         except WebDriverException:
             return False
+
+
+def setup_virtual_desktop():
+    try:
+        from pyvirtualdisplay import Display
+
+        if "Linux" in platform.system():
+            display = Display(visible=1, size=(800, 600))
+            display.start()
+    except Exception as e:
+        raise (str(e))
+
+
+def add_local_paths():
+    dir_path = path.dirname(path.realpath(__file__))
+    sys.path.append(dir_path + "modules")
+    sys.path.append(dir_path + "drivers")
