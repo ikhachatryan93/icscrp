@@ -1,21 +1,24 @@
 #! /bin/env python
+import sys
+import os
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(dir_path, "modules"))
+sys.path.append(os.path.join(dir_path, "drivers"))
+sys.path.append(os.path.join(dir_path, "scrapers"))
+
 import argparse
 import logging
-from os import path
-import sys
 
-dir_path = path.dirname(path.realpath(__file__))
-sys.path.append(dir_path + "modules")
-sys.path.append(dir_path + "drivers")
+from utilities.mysql_wrapper import MySQL
 
-from mysql_wrapper import MySQL
+from utilities.utils import add_local_paths
+from utilities.utils import configure_logging
+from utilities.utils import Configs
+from utilities.utils import write_to_excel
 
-from utilities import add_local_paths
-from utilities import configure_logging
-from utilities import Configs
-
-from scraper import IcoBench
-from scraper import Scraper
+from scrapers.scraperbase import ScraperBase
+from scrapers.icobench import IcoBench
 
 import traceback
 
@@ -30,21 +33,26 @@ def parse_arguments():
     parser.add_argument('--db', type=str, help='Database to use, None to not use a particular one')
 
     args = parser.parse_args()
+    print(args.hostname)
+    print(args.port)
+    print(args.user)
+    print(args.password)
+    print(args.db)
 
     return args.hostname, args.port, args.user, args.password, args.db
 
 
 def main():
+    parse_arguments()
     data = []
-    #try:
-    scraper = IcoBench(Configs.get('max_threads'), Configs.get('max_browsers'))
-    data = scraper.scrape_website()
-    import utilities
-    utilities.write_json_file("out.xlsx",data)
-    data = []
-    #except:
-    #    logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
-    #    exit(1)
+    try:
+        scraper = IcoBench(Configs.get('max_threads'), Configs.get('max_browsers'))
+        data = scraper.scrape_website()
+        write_to_excel("out.xlsx", data)
+        data = []
+    except:
+        logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+        exit(1)
 
     pass
 

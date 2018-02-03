@@ -3,7 +3,7 @@ import logging
 import re
 import time
 
-from utilities import Configs
+from utilities.utils import Configs
 
 from bs4 import BeautifulSoup
 
@@ -31,7 +31,7 @@ class Item:
         for key in self.ids:
             self.info[key] = ''
 
-        self.NOT_FOUND_MSG = "From {}: could not find ".format(url)
+        self.NOT_FOUND_MSG = "From {}: could not find {}".format(url)
         self.driver = driver
         self.bs4 = bs
 
