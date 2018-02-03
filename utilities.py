@@ -13,6 +13,10 @@ from urllib.parse import urlsplit
 
 from os import sep, path, remove
 
+dir_path = path.dirname(path.realpath(__file__))
+sys.path.append(dir_path + "modules")
+sys.path.append(dir_path + "drivers")
+
 from openpyxl import Workbook
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
@@ -299,7 +303,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 user_agent = {'user-agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
 
 
-def load_page(url):
+def load_page(url, parser):
     try:
         http = urllib3.PoolManager(1, headers=user_agent, timeout=10)
         r = http.request('GET', url)
@@ -307,7 +311,7 @@ def load_page(url):
         if 'error return without exception set' not in str(e):
             raise SyntaxError(e)
 
-    return bs4.BeautifulSoup(r.data.decode('utf-8'), 'html5lib')
+    return bs4.BeautifulSoup(r.data.decode('utf-8'), parser)
 
 
 def load_page1(url):

@@ -1,7 +1,12 @@
 #! /bin/env python
 import argparse
 import logging
+from os import path
 import sys
+
+dir_path = path.dirname(path.realpath(__file__))
+sys.path.append(dir_path + "modules")
+sys.path.append(dir_path + "drivers")
 
 from mysql_wrapper import MySQL
 
@@ -35,7 +40,7 @@ def main():
     scraper = IcoBench(Configs.get('max_threads'), Configs.get('max_browsers'))
     data = scraper.scrape_website()
     import utilities
-    utilities.write_to_excel("out.xlsx",data)
+    utilities.write_json_file("out.xlsx",data)
     data = []
     #except:
     #    logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))

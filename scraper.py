@@ -1,13 +1,20 @@
 import sys
+import os
 import logging
 import threading
 import time
 from urllib.request import URLError
 
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(dir_path + "modules")
+sys.path.append(dir_path + "drivers")
+
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+
 
 from bs4 import BeautifulSoup
 from urllib.request import urljoin
@@ -37,7 +44,7 @@ class Scraper:
 
         self.urls = NotImplemented
         self.drivers = []
-        self.ico_profiles = []
+        # self.ico_profiles = []
         self.mutex = threading.Lock()
 
         assert (self.max_browsers < 30)
@@ -73,10 +80,10 @@ class Scraper:
             # thread.daemon = True
             thread.start()
             threads.append(thread)
-        sys.stdout.write("\r")
+            while threading.active_count() > self.max_threads:
+                time.sleep(0.2)
 
-        while threading.active_count() > self.max_threads:
-            time.sleep(0.2)
+        sys.stdout.write("\r")
 
         for thread in threads:
             thread.join(10)
@@ -113,7 +120,7 @@ class IcoBench(Scraper):
         self.logger = 'stream'
 
         self.drivers = []
-        self.ico_profiles = []
+        #self.ico_profiles = []
 
         # location of listings in website, may be more than one
         self.urls = ['https://icobench.com/icos']
@@ -122,7 +129,7 @@ class IcoBench(Scraper):
     def scrape_listings(self, url, page_num=None):
         # next page url from 'Next 'pagination tag
         try:
-            bs = load_page(url.split('&')[0])
+            bs = load_page(url.split('&')[0], self.html_parser)
         except URLError:
             logging.error('Timeout when scraping listings from %s', url)
             return
@@ -139,10 +146,10 @@ class IcoBench(Scraper):
 
         # if next page is previous page (pagination ended) break recursion
         if next_page_url or next_page_url == url:
-            page_num = 0 if page_num is None else page_num + 1
+            page_num = 1 if page_num is None else page_num + 1
             sys.stdout.write('\r[Scraping listing: {}]'.format(page_num))
             sys.stdout.flush()
-            if page_num < 2:
+            if page_num < 4:
                 urls += self.scrape_listings(next_page_url, page_num)
         sys.stdout.write('\r')
 
@@ -165,9 +172,9 @@ class IcoBench(Scraper):
 
 
         # make this resource thread_safe
-        #self.mutex.acquire()
+        self.mutex.acquire()
         profiles.append(data)
-        #self.mutex.release()
+        self.mutex.release()
 
         return data
 
