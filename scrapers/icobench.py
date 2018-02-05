@@ -8,7 +8,7 @@ from urllib.request import urljoin
 from utilities.utils import load_page
 
 from scrapers.data_keys import DataKeys
-from scrapers.scraperbase import ScraperBase
+from scrapers.base_scraper import ScraperBase
 
 
 class IcoBench(ScraperBase):
@@ -24,7 +24,7 @@ class IcoBench(ScraperBase):
         self.browser_name = None
 
         # should be 'html5lib', 'lxml' or 'html.parser'
-        self.html_parser = 'lxml'
+        self.html_parser = 'html5lib'
 
         # should be 'file' or 'stream'
         self.logger = 'stream'
@@ -60,7 +60,7 @@ class IcoBench(ScraperBase):
             page_num = 1 if page_num is None else page_num + 1
             sys.stdout.write('\r[Scraping listing: {}]'.format(page_num))
             sys.stdout.flush()
-            if page_num < 1:
+            if page_num < 15:
                 urls += self.scrape_listings(next_page_url, page_num)
         sys.stdout.write('\r')
 
@@ -95,8 +95,12 @@ class IcoBench(ScraperBase):
                 date_label = financial_divs.find('label', text=re.compile('Time', re.IGNORECASE))
                 date_number = date_label.find_next_sibling('div', {'class': 'number'})
                 date_info = re.findall(r'\d{4}[\-.]\d{2}[\-.]\d{2}', date_number.find_next_sibling().text)
-                data['ico_start'] = date_info[0]
-                data['ico_end'] = date_info[1]
+                if date_info:
+                    data['ico_start'] = date_info[0]
+                    data['ico_end'] = date_info[1]
+                else:
+                    data['ico_start'] = date_number.text.strip()
+                    data['ico_end'] = date_number.text.strip()
             except Exception as e:
                 logging.warning(self.NOT_FOUND_MSG.format(url, 'Date Info') + ' with message: '.format(str(e)))
 

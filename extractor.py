@@ -12,12 +12,11 @@ import logging
 
 from utilities.mysql_wrapper import MySQL
 
-from utilities.utils import add_local_paths
 from utilities.utils import configure_logging
 from utilities.utils import Configs
 from utilities.utils import write_to_excel
 
-from scrapers.scraperbase import ScraperBase
+from scrapers.base_scraper import ScraperBase
 from scrapers.icobench import IcoBench
 
 import traceback
@@ -33,12 +32,6 @@ def parse_arguments():
     parser.add_argument('--db', type=str, help='Database to use, None to not use a particular one')
 
     args = parser.parse_args()
-    print(args.hostname)
-    print(args.port)
-    print(args.user)
-    print(args.password)
-    print(args.db)
-
     return args.hostname, args.port, args.user, args.password, args.db
 
 
@@ -76,5 +69,4 @@ def main():
 
 if __name__ == "__main__":
     configure_logging()
-    add_local_paths()
     sys.exit(main())
