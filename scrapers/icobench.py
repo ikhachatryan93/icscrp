@@ -10,6 +10,7 @@ from urllib.request import urljoin
 from utilities.utils import load_page
 
 from scrapers.data_keys import DataKeys
+from scrapers.data_keys import BOOL_VALUES
 from scrapers.base_scraper import ScraperBase
 
 
@@ -33,13 +34,15 @@ class IcoBench(ScraperBase):
 
         self.drivers = []
 
+        self.output_data = []
+
         self.NOT_FOUND_MSG = "From {}: could not find {}"
 
         # location of listings in website, may be more than one
         self.urls = ['https://icobench.com/icos']
         self.domain = 'https://icobench.com'
 
-    def scrape_listings_in_a_page(self, url, listings_urls):
+    def scrape_listings_from_page(self, url, listings_urls):
         # next page url from 'Next 'pagination tag
         try:
             bs = load_page(url.split('&')[0], self.html_parser)
@@ -63,7 +66,7 @@ class IcoBench(ScraperBase):
 
             sys.stdout.flush()
             time.sleep(0.3)
-            thread = threading.Thread(target=self.scrape_listings_in_a_page, args=(profile_url, listings_urls))
+            thread = threading.Thread(target=self.scrape_listings_from_page, args=(profile_url, listings_urls))
 
             # thread.daemon = True
             thread.start()
@@ -89,11 +92,11 @@ class IcoBench(ScraperBase):
         paging = bs.find('a', {'class': 'next'}, href=True)
         next_page_url = None if not paging else urljoin(self.domain, paging['href'])
 
-        urls = []
+        listing_urls = []
         listings = bs.find_all('a', {'class': 'image'}, href=True)
         if listings:
             for profile in listings:
-                urls.append(urljoin(self.domain, profile['href']))
+                listing_urls.append(urljoin(self.domain, profile['href']))
 
         # if next page is previous page (pagination ended) break recursion
         if next_page_url or next_page_url == url:
@@ -101,10 +104,10 @@ class IcoBench(ScraperBase):
             sys.stdout.write('\r[Scraping listing urls: {}]'.format(page_num))
             sys.stdout.flush()
             if page_num < 2:
-                urls += self.scrape_listings_via_pagin_next(next_page_url, page_num)
+                listing_urls += self.scrape_listings_via_pagin_next(next_page_url, page_num)
         sys.stdout.write('\r')
 
-        return urls
+        return listing_urls
 
     def scrape_listings(self, url):
         # next page url from 'Next 'pagination tag
@@ -122,19 +125,25 @@ class IcoBench(ScraperBase):
             pass
 
         if max_url_id:
+            # unomment for single page debug
             return self.scrape_listings_via_pagin_next(url)
-            pages_urls = []
+
             url_query = self.urls[0] + '?page='
+
             # from [1-max_url_id) to [1-max_url_id]
             max_url_id += 1
+
+            pages_urls = []
             for num in range(1, max_url_id):
                 pages_urls.append(url_query + str(num))
             return self.scrape_listings_via_queries(pages_urls)
         else:
             return self.scrape_listings_via_pagin_next(url)
 
-    def scrape_profile(self, url, profiles):
-        data = {DataKeys.PROFILE_URL: url}
+    def scrape_profile(self, url):
+        data = DataKeys.initialize()
+
+        data[DataKeys.PROFILE_URL] = url
 
         bs = load_page(url, self.html_parser)
 
@@ -145,8 +154,8 @@ class IcoBench(ScraperBase):
             data[DataKeys.DESCRIPTION] = name_and_description[1].text.strip()
         except:
             logging.warning(self.NOT_FOUND_MSG.format(url, 'Name and/or Description'))
-            data[DataKeys.NAME] = DataKeys.NOT_AVAILABLE
-            data[DataKeys.DESCRIPTION] = DataKeys.NOT_AVAILABLE
+            data[DataKeys.NAME] = BOOL_VALUES.NOT_AVAILABLE
+            data[DataKeys.DESCRIPTION] = BOOL_VALUES.NOT_AVAILABLE
 
         ######################### Score Fileds #########################
         score_divs = bs.find('div', {'class': 'rating'}).find('div', {'class': 'distribution'}).findAll('div')
@@ -159,13 +168,12 @@ class IcoBench(ScraperBase):
             try:
                 data[key] = str(div.contents[0]).strip()
             except:
-                data[key] = DataKeys.NOT_AVAILABLE
+                data[key] = BOOL_VALUES.NOT_AVAILABLE
 
         rate_div = bs.find('div', {'itemprop': 'ratingValue'})
         if rate_div:
             data[DataKeys.OVERALL_SCORES] = str(rate_div['content'])
         else:
-            data[DataKeys.OVERALL_SCORES] = DataKeys.NOT_AVAILABLE
             self.NOT_FOUND_MSG.format(url, 'Experts score')
         ###############################################################
 
@@ -190,8 +198,8 @@ class IcoBench(ScraperBase):
                         data[DataKeys.ICO_START] = date_info[0]
                         data[DataKeys.ICO_END] = date_info[1]
             except Exception as e:
-                data[DataKeys.ICO_START] = DataKeys.NOT_AVAILABLE
-                data[DataKeys.ICO_END] = DataKeys.NOT_AVAILABLE
+                data[DataKeys.ICO_START] = BOOL_VALUES.NOT_AVAILABLE
+                data[DataKeys.ICO_END] = BOOL_VALUES.NOT_AVAILABLE
                 logging.warning(self.NOT_FOUND_MSG.format(url, 'Date Info') + ' with message: '.format(str(e)))
             ############## end of date info #################
 
@@ -200,7 +208,8 @@ class IcoBench(ScraperBase):
             if financial_divs_:
                 financial_info_keys = {'TOKEN': DataKeys.TOKEN_NAME,
                                        'PREICO PRICE': DataKeys.PRE_ICO_PRICE,
-                                       'Price': DataKeys.ICO_PRICE,
+                                       'PPRICE': DataKeys.ICO_PRICE,
+                                       'PRICE IN ICO': DataKeys.ICO_PRICE,
                                        'PLATFORM': DataKeys.PLATFORM,
                                        'ACCEPTING': DataKeys.ACCEPTED_CURRENCIES,
                                        'SOFT CAP': DataKeys.SOFT_CAP,
@@ -212,27 +221,18 @@ class IcoBench(ScraperBase):
                     try:
                         info_ = financial_div.findAll('div')
                         key = info_[0].text.strip().upper()
+
+                        # kyc and whitelist are in one filed
+                        # so this case is not as other ones
+                        if key == 'WHITELIST/KYC':
+                            text = info_[1].text.upper()
+                            data[DataKeys.KYC] = BOOL_VALUES.YES if 'KYC' in text else BOOL_VALUES.NO
+                            data[DataKeys.KYC] = BOOL_VALUES.YES if 'WHITELIST' in text else BOOL_VALUES.NO
+
                         if key in financial_info_keys:
-
-                            # kyc and whitelist are in one filed
-                            # so this case is not as other ones
-                            if key == 'WHITELIST/KYC':
-                                if 'KYC' in info_[1].text.upper():
-                                    data[DataKeys.KYC] = DataKeys.BOOL_VALUES.YES
-                                else:
-                                    data[DataKeys.KYC] = DataKeys.BOOL_VALUES.NO
-                                if 'WHITELIST' in info_[1].text.upper():
-                                    data[DataKeys.WHITELIST] = DataKeys.BOOL_VALUES.YES
-                                else:
-                                    data[DataKeys.WHITELIST] = DataKeys.BOOL_VALUES.NO
-                            else:
-                                data[DataKeys.KYC] = DataKeys.BOOL_VALUES.NO
-                                data[DataKeys.WHITELIST] = DataKeys.BOOL_VALUES.NO
-                                data[financial_info_keys[key]] = info_[1].text.strip()
-
-                        for _, info_key in financial_info_keys.items():
-                            if info_key not in data:
-                                data[info_key] = DataKeys.NOT_AVAILABLE
+                            text = info_[1].text.strip()
+                            if text:
+                                data[financial_info_keys[key]] = text
                     except:
                         pass
 
@@ -242,9 +242,6 @@ class IcoBench(ScraperBase):
         else:
             logging.warning(self.NOT_FOUND_MSG.format(url, 'financial data'))
 
-        # make this resource thread_safe
         self.mutex.acquire()
-        profiles.append(data)
+        self.output_data.append(data)
         self.mutex.release()
-
-        return data

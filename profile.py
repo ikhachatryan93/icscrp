@@ -31,6 +31,8 @@ class Item:
         for key in self.ids:
             self.info[key] = ''
 
+        self.output_data = []
+
         self.NOT_FOUND_MSG = "From {}: could not find {}".format(url)
         self.driver = driver
         self.bs4 = bs

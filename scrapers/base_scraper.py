@@ -13,6 +13,8 @@ from bs4 import BeautifulSoup
 from profile import Item
 
 from utilities.utils import setup_browser
+from scrapers.data_keys import DataKeys
+
 
 # DATA_TYPE to be written in DB
 # DATA_SAMPLE = {'TABLE1': {'key': 'value', ....}, 'TABLE2': {'key': 'value', ....}, ....}
@@ -30,6 +32,9 @@ class ScraperBase:
 
         self.urls = NotImplemented
         self.drivers = []
+
+        self.output_data = []
+
         # self.ico_profiles = []
         self.mutex = threading.Lock()
 
@@ -49,20 +54,19 @@ class ScraperBase:
     def scrape_listings(self, url):
         raise NotImplementedError('scrap_listings not implemented yet')
 
-    def scrape_profile(self, url, profiles):
+    def scrape_profile(self, url):
         raise NotImplementedError('scrap_profile not implemented yet')
 
     def scrape_profiles(self, listings):
         if self.engine == 'selenium':
             self.initialize_browsers()
 
-        profiles = []
         threads = []
         for idx, profile_url in enumerate(listings):
             sys.stdout.write("\r[Scraping profiles: {}/{}]".format(idx, len(listings)))
             sys.stdout.flush()
-            time.sleep(0.3)
-            thread = threading.Thread(target=self.scrape_profile, args=(profile_url, profiles))
+            time.sleep(0.1)
+            thread = threading.Thread(target=self.scrape_profile, args=[profile_url])
             # thread.daemon = True
             thread.start()
             threads.append(thread)
@@ -76,16 +80,14 @@ class ScraperBase:
 
         self.release_browsers()
 
-        return profiles
-
     def scrape_website(self):
         listings = []
         for url in self.urls:
             logging.info('Scraping data from {}'.format(url))
-            listings += self.scrape_listings(url)
+            listings += (self.scrape_listings(url))
 
-        return self.scrape_profiles(listings)
-
+        self.scrape_profiles(listings)
+        return self.output_data
 
 # def click_next_pagination(driver):
 #    global next_page

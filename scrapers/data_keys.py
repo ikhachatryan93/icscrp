@@ -1,23 +1,39 @@
-class DataKeys:
+class BOOL_VALUES:
+    YES = 'yes'
+    NO = 'no'
+    AVAILABLE = 'A'
     NOT_AVAILABLE = 'N.A'
 
-    class BOOL_VALUES:
-        YES = 'yes'
-        NO = 'no'
 
-    PLATFORM = 'platform'
+class DataKeys:
+
+    # initialize data object with default values
+    @staticmethod
+    def initialize():
+        # get all members
+        data = dict()
+        members = [attr for attr in dir(DataKeys) if
+                   not callable(getattr(DataKeys, attr)) and not attr.startswith("__")]
+        for key in members:
+            data[eval('DataKeys.' + key)] = BOOL_VALUES.NOT_AVAILABLE
+
+        return data
+
     NAME = 'name'
-    DESCRIPTION = 'description'
+    TOKEN_NAME = 'token_name'
     PROFILE_URL = 'ico_url'
+    DESCRIPTION = 'description'
+    PLATFORM = 'platform'
+    ICO_START = 'ico_start'
+    ICO_END = 'ico_end'
     STATUS = 'status'
     RAISE_GOAL = 'raise_goal'
     RAISED = 'raised'
-    ICO_START = 'ico_start'
-    ICO_END = 'ico_end'
-    TOKEN_NAME = 'token_name'
     WEBSITE_URL = 'webpage'
+    SOFT_CAP = 'soft_cap'
+    HARD_CAP = 'hard_cap'
 
-    #TODO: define format
+    # TODO: define format
     COUNTRY = 'country'
     # should be 2 letter country ISO code
     COUNTRIES_RESTRICTED = 'countries_restricted'
@@ -27,8 +43,6 @@ class DataKeys:
     TOKEN_PRICE_ETH = 'token_price_etherum'
     TOKEN_PRICE_LIT = 'token_price_litecoin'
     TOKEN_PRICE_USD = 'token_price_usd'
-    SOFT_CAP = 'soft_cap'
-    HARD_CAP = 'hard_cap'
     # yes or no
 
     # token price
@@ -40,12 +54,11 @@ class DataKeys:
     # scores
     OVERALL_SCORES = 'website_overall_rating'
 
-
     # social pages
     GITHUB_URL = 'github_page'
     TELEGRAM_URL = 'telegram_page'
     BITCOINTALK_URL = 'bitcointalk_page'
     MEDIUM_URL = 'medium_page'
-    LINEDIN_URL = 'linkedin_page'
+    LINKEDIN_URL = 'linkedin_page'
     TWITTER_URL = 'twitter_page'
     REDDIT_URL = 'reddit_page'
