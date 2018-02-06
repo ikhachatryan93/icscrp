@@ -34,7 +34,7 @@ class ScraperBase:
         self.mutex = threading.Lock()
 
         assert (self.max_browsers < 30)
-        assert (self.max_threads < 30)
+        assert (self.max_threads < 60)
         assert (self.max_threads >= self.max_browsers)
 
     def initialize_browsers(self):

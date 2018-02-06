@@ -1,6 +1,14 @@
 class DataKeys:
+    NOT_AVAILABLE = 'N.A'
+
+    class BOOL_VALUES:
+        YES = 'yes'
+        NO = 'no'
+
     PLATFORM = 'platform'
     NAME = 'name'
+    DESCRIPTION = 'description'
+    PROFILE_URL = 'ico_url'
     STATUS = 'status'
     RAISE_GOAL = 'raise_goal'
     RAISED = 'raised'
@@ -22,11 +30,16 @@ class DataKeys:
     SOFT_CAP = 'soft_cap'
     HARD_CAP = 'hard_cap'
     # yes or no
-    KYC_REQUIRED = 'kyc_required'
 
     # token price
     PRE_ICO_PRICE = 'pre_ico_price'
     ICO_PRICE = 'ico_price'
+    KYC = 'kyc'
+    WHITELIST = 'whitelist'
+
+    # scores
+    OVERALL_SCORES = 'website_overall_rating'
+
 
     # social pages
     GITHUB_URL = 'github_page'
