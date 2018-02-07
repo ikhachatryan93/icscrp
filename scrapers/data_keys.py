@@ -8,6 +8,8 @@ class BOOL_VALUES:
 class DataKeys:
 
     # initialize data object with default values
+
+
     @staticmethod
     def initialize():
         # get all members
@@ -29,7 +31,6 @@ class DataKeys:
     STATUS = 'status'
     RAISE_GOAL = 'raise_goal'
     RAISED = 'raised'
-    WEBSITE_URL = 'webpage'
     SOFT_CAP = 'soft_cap'
     HARD_CAP = 'hard_cap'
 
@@ -39,10 +40,10 @@ class DataKeys:
     COUNTRIES_RESTRICTED = 'countries_restricted'
 
     ACCEPTED_CURRENCIES = 'accepted_currencies'
-    TOKEN_PRICE_BTC = 'token_price_bitcoin'
-    TOKEN_PRICE_ETH = 'token_price_etherum'
-    TOKEN_PRICE_LIT = 'token_price_litecoin'
-    TOKEN_PRICE_USD = 'token_price_usd'
+    #TOKEN_PRICE_BTC = 'token_price_bitcoin'
+    #TOKEN_PRICE_ETH = 'token_price_etherum'
+    #TOKEN_PRICE_LIT = 'token_price_litecoin'
+    #TOKEN_PRICE_USD = 'token_price_usd'
     # yes or no
 
     # token price
@@ -62,3 +63,6 @@ class DataKeys:
     LINKEDIN_URL = 'linkedin_page'
     TWITTER_URL = 'twitter_page'
     REDDIT_URL = 'reddit_page'
+    FACEBOOK_URL = 'facebook_page'
+    ICOWEBSITE = 'webpage'
+    LOGO_URL = 'logo_url'

@@ -16,9 +16,6 @@ from utilities.utils import setup_browser
 from scrapers.data_keys import DataKeys
 
 
-# DATA_TYPE to be written in DB
-# DATA_SAMPLE = {'TABLE1': {'key': 'value', ....}, 'TABLE2': {'key': 'value', ....}, ....}
-
 # Abstract class
 class ScraperBase:
     def __init__(self, threads=1, browsers=1):
@@ -63,9 +60,9 @@ class ScraperBase:
 
         threads = []
         for idx, profile_url in enumerate(listings):
-            sys.stdout.write("\r[Scraping profiles: {}/{}]".format(idx, len(listings)))
+            sys.stdout.write("\r[Scraping profiles: {}/{}] ".format(idx, len(listings)))
             sys.stdout.flush()
-            time.sleep(0.1)
+            # time.sleep(0.01)
             thread = threading.Thread(target=self.scrape_profile, args=[profile_url])
             # thread.daemon = True
             thread.start()

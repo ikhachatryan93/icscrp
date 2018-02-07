@@ -65,7 +65,7 @@ class IcoBench(ScraperBase):
             self.mutex.release()
 
             sys.stdout.flush()
-            time.sleep(0.3)
+            # time.sleep(0.1)
             thread = threading.Thread(target=self.scrape_listings_from_page, args=(profile_url, listings_urls))
 
             # thread.daemon = True
@@ -208,7 +208,7 @@ class IcoBench(ScraperBase):
             if financial_divs_:
                 financial_info_keys = {'TOKEN': DataKeys.TOKEN_NAME,
                                        'PREICO PRICE': DataKeys.PRE_ICO_PRICE,
-                                       'PPRICE': DataKeys.ICO_PRICE,
+                                       'PRICE': DataKeys.ICO_PRICE,
                                        'PRICE IN ICO': DataKeys.ICO_PRICE,
                                        'PLATFORM': DataKeys.PLATFORM,
                                        'ACCEPTING': DataKeys.ACCEPTED_CURRENCIES,
@@ -227,7 +227,7 @@ class IcoBench(ScraperBase):
                         if key == 'WHITELIST/KYC':
                             text = info_[1].text.upper()
                             data[DataKeys.KYC] = BOOL_VALUES.YES if 'KYC' in text else BOOL_VALUES.NO
-                            data[DataKeys.KYC] = BOOL_VALUES.YES if 'WHITELIST' in text else BOOL_VALUES.NO
+                            data[DataKeys.WHITELIST] = BOOL_VALUES.YES if 'WHITELIST' in text else BOOL_VALUES.NO
 
                         if key in financial_info_keys:
                             text = info_[1].text.strip()
@@ -241,6 +241,28 @@ class IcoBench(ScraperBase):
 
         else:
             logging.warning(self.NOT_FOUND_MSG.format(url, 'financial data'))
+
+        # get links
+        try:
+            soc_mapping = {'FACEBOOK': DataKeys.FACEBOOK_URL, 'GITHUB': DataKeys.GITHUB_URL, 'MEDIUM': DataKeys.MEDIUM_URL,
+                           'TELEGRAM': DataKeys.TELEGRAM_URL, 'REDDIT': DataKeys.REDDIT_URL, 'BITCOINTALK': DataKeys.BITCOINTALK_URL,
+                           'WWW': DataKeys.ICOWEBSITE, 'LINKEDIN': DataKeys.LINKEDIN_URL, 'TWITTER': DataKeys.TWITTER_URL}
+
+            link_tags = bs.find('div', {'class': 'socials'}).findAll('a')
+            for link_tag in link_tags:
+                if link_tag.has_attr('title') and link_tag.has_attr('href'):
+                    soc = link_tag.text.strip()
+                    if soc.upper() in soc_mapping:
+                        data[soc_mapping[soc.upper()]] = link_tag['href']
+
+        except:
+            logging.warning(self.NOT_FOUND_MSG.format('Social links'))
+
+        try:
+            logo_link = bs.find('div', {'class': 'image'}).find('img')
+            data[DataKeys.LOGO_URL] = urljoin(self.domain, logo_link['src'])
+        except:
+            logging.warning(self.NOT_FOUND_MSG.format('Logo url'))
 
         self.mutex.acquire()
         self.output_data.append(data)
