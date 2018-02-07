@@ -53,17 +53,16 @@ class IcoBench(ScraperBase):
         listings_tags = bs.find_all('a', {'class': 'image'}, href=True)
         if listings_tags:
             for listing_tag in listings_tags:
+                self.mutex.acquire()
                 listings_urls.append(urljoin(self.domain, listing_tag['href']))
+                self.mutex.release()
 
     def scrape_listings_via_queries(self, urls):
         threads = []
         listings_urls = []
         for idx, profile_url in enumerate(urls):
 
-            self.mutex.acquire()
             sys.stdout.write("\r[Scraping listing urls: {} pages]".format(idx, len(listings_urls)))
-            self.mutex.release()
-
             sys.stdout.flush()
             # time.sleep(0.1)
             thread = threading.Thread(target=self.scrape_listings_from_page, args=(profile_url, listings_urls))
@@ -126,7 +125,7 @@ class IcoBench(ScraperBase):
 
         if max_url_id:
             # unomment for single page debug
-            return self.scrape_listings_via_pagin_next(url)
+            # return self.scrape_listings_via_pagin_next(url)
 
             url_query = self.urls[0] + '?page='
 
