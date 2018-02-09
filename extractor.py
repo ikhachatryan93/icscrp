@@ -18,6 +18,7 @@ from utilities.utils import write_to_excel
 
 from scrapers.base_scraper import ScraperBase
 from scrapers.icobench import IcoBench
+from scrapers.icorating import ICORATING
 
 import traceback
 
@@ -39,7 +40,9 @@ def main():
     parse_arguments()
     data = []
     try:
-        scraper = IcoBench(Configs.get('max_threads'), Configs.get('max_browsers'))
+        #scraper = IcoBench(Configs.get('max_threads'), Configs.get('max_browsers'))
+        #data = scraper.scrape_website()
+        scraper = ICORATING(Configs.get('max_threads'), Configs.get('max_browsers'))
         data = scraper.scrape_website()
         write_to_excel("out.xlsx", data)
         data = []

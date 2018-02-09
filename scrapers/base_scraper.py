@@ -1,7 +1,10 @@
 import sys
 import logging
-import threading
 import time
+
+from multiprocessing.pool import ThreadPool
+from multiprocessing import Lock
+import tqdm
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -30,10 +33,8 @@ class ScraperBase:
         self.urls = NotImplemented
         self.drivers = []
 
-        self.output_data = []
-
         # self.ico_profiles = []
-        self.mutex = threading.Lock()
+        self.mutex = Lock()
 
         assert (self.max_browsers < 30)
         assert (self.max_threads < 60)
@@ -54,28 +55,18 @@ class ScraperBase:
     def scrape_profile(self, url):
         raise NotImplementedError('scrap_profile not implemented yet')
 
-    def scrape_profiles(self, listings):
+    def scrape_profiles(self, pages):
         if self.engine == 'selenium':
             self.initialize_browsers()
 
-        threads = []
-        for idx, profile_url in enumerate(listings):
-            sys.stdout.write("\r[Scraping profiles: {}/{}] ".format(idx, len(listings)))
-            sys.stdout.flush()
-            # time.sleep(0.01)
-            thread = threading.Thread(target=self.scrape_profile, args=[profile_url])
-            # thread.daemon = True
-            thread.start()
-            threads.append(thread)
-            while threading.active_count() > self.max_threads:
-                time.sleep(0.2)
-
-        sys.stdout.write("\r")
-
-        for thread in threads:
-            thread.join(10)
+        print("Scraping profiles")
+        pool = ThreadPool(self.max_threads)
+        profile_datas = list(tqdm.tqdm(pool.imap(self.scrape_profile, pages), total=len(pages)))
+        pool.close()
+        pool.join()
 
         self.release_browsers()
+        return profile_datas
 
     def scrape_website(self):
         listings = []
@@ -83,8 +74,7 @@ class ScraperBase:
             logging.info('Scraping data from {}'.format(url))
             listings += (self.scrape_listings(url))
 
-        self.scrape_profiles(listings)
-        return self.output_data
+        return self.scrape_profiles(listings)
 
 # def click_next_pagination(driver):
 #    global next_page
@@ -241,46 +231,3 @@ class ScraperBase:
 #            extract_item_with_selenium(url, items_info, try_again=False)
 
 #    drivers[i]["status"] = "free"
-
-
-# def extract(url, threads_num):
-#     logging.info('Extracting all listing urls...')
-#     engine = Configs.get('pagination_engine')
-#     if engine == 'selenium':
-#         shop_urls = get_item_urls(url)
-#         setup_drivers()
-#         extractor = 'extract_item_with_selenium'
-#     else:
-#         shop_urls = get_item_urls_bs4(url)
-#         extractor = 'extract_item_with_bs4'
-#
-#     items_info = []
-#     max_extr_items = Configs.get("max_items_extract")
-#
-#     trds = []
-#     i = 0
-#     total = len(shop_urls)
-#
-#     for url in shop_urls:
-#
-#         if i >= max_extr_items:
-#             print("Reached maximum number of extractions specified in configs.txt file")
-#             break
-#         i += 1
-#         sys.stdout.write("\r[Extracting: {}/{}]".format(i, total))
-#         sys.stdout.flush()
-#         time.sleep(0.3)
-#         t = threading.Thread(target=eval(extractor), args=(url, items_info))
-#         t.daemon = True
-#         t.start()
-#         trds.append(t)
-#         while threading.active_count() > threads_num:
-#             time.sleep(0.2)
-#
-#    for t in trds:
-#        t.join(10)
-#
-#    for d in drivers:
-#        d["driver"].quit()
-#
-#    return items_info

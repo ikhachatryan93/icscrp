@@ -1,8 +1,9 @@
 import re
 import sys
 import time
+import tqdm
 
-import threading
+from multiprocessing.pool import ThreadPool
 import logging
 from urllib.request import URLError
 from urllib.request import urljoin
@@ -42,43 +43,31 @@ class IcoBench(ScraperBase):
         self.urls = ['https://icobench.com/icos']
         self.domain = 'https://icobench.com'
 
-    def scrape_listings_from_page(self, url, listings_urls):
+    def scrape_listings_from_page(self, url):
         # next page url from 'Next 'pagination tag
         try:
             bs = load_page(url.split('&')[0], self.html_parser)
-        except URLError:
-            logging.error('Timeout error while scraping listings from %s', url)
+        except:
+            logging.error('Error while scraping listings from %s', url)
             return
 
         listings_tags = bs.find_all('a', {'class': 'image'}, href=True)
+        listings_urls = []
         if listings_tags:
             for listing_tag in listings_tags:
-                self.mutex.acquire()
                 listings_urls.append(urljoin(self.domain, listing_tag['href']))
-                self.mutex.release()
-
-    def scrape_listings_via_queries(self, urls):
-        threads = []
-        listings_urls = []
-        for idx, profile_url in enumerate(urls):
-
-            sys.stdout.write("\r[Scraping listing urls: {} pages]".format(idx, len(listings_urls)))
-            sys.stdout.flush()
-            # time.sleep(0.1)
-            thread = threading.Thread(target=self.scrape_listings_from_page, args=(profile_url, listings_urls))
-
-            # thread.daemon = True
-            thread.start()
-            threads.append(thread)
-            while threading.active_count() > self.max_threads:
-                time.sleep(0.2)
-
-        sys.stdout.write("\r")
-
-        for thread in threads:
-            thread.join(10)
 
         return listings_urls
+
+    def scrape_listings_via_queries(self, urls):
+        pool = ThreadPool(self.max_threads)
+        print('Scraping listings')
+        listings_urls = list(tqdm.tqdm(pool.imap(self.scrape_listings_from_page, urls), total=len(urls)))
+        flat_list = [item for sublist in listings_urls for item in sublist]
+
+        pool.close()
+        pool.join()
+        return flat_list
 
     def scrape_listings_via_pagin_next(self, url, page_num=None):
         # next page url from 'Next 'pagination tag
@@ -113,7 +102,7 @@ class IcoBench(ScraperBase):
         try:
             bs = load_page(url.split('&')[0], self.html_parser)
         except URLError:
-            logging.error('Timeout error while scraping listings from %s', url)
+            logging.critical('Timeout error while scraping listings from %s', url)
             return
 
         paging = bs.find('a', {'class': 'next'}, href=True)
@@ -141,10 +130,12 @@ class IcoBench(ScraperBase):
 
     def scrape_profile(self, url):
         data = DataKeys.initialize()
-
         data[DataKeys.PROFILE_URL] = url
-
-        bs = load_page(url, self.html_parser)
+        try:
+            bs = load_page(url, self.html_parser)
+        except:
+            logging.error('Error while scraping profile {}'.format(url))
+            return
 
         try:
             description_tag = bs.find('div', {'class': 'name'})
@@ -243,9 +234,12 @@ class IcoBench(ScraperBase):
 
         # get links
         try:
-            soc_mapping = {'FACEBOOK': DataKeys.FACEBOOK_URL, 'GITHUB': DataKeys.GITHUB_URL, 'MEDIUM': DataKeys.MEDIUM_URL,
-                           'TELEGRAM': DataKeys.TELEGRAM_URL, 'REDDIT': DataKeys.REDDIT_URL, 'BITCOINTALK': DataKeys.BITCOINTALK_URL,
-                           'WWW': DataKeys.ICOWEBSITE, 'LINKEDIN': DataKeys.LINKEDIN_URL, 'TWITTER': DataKeys.TWITTER_URL}
+            soc_mapping = {'FACEBOOK': DataKeys.FACEBOOK_URL, 'GITHUB': DataKeys.GITHUB_URL,
+                           'MEDIUM': DataKeys.MEDIUM_URL,
+                           'TELEGRAM': DataKeys.TELEGRAM_URL, 'REDDIT': DataKeys.REDDIT_URL,
+                           'BITCOINTALK': DataKeys.BITCOINTALK_URL,
+                           'WWW': DataKeys.ICOWEBSITE, 'LINKEDIN': DataKeys.LINKEDIN_URL,
+                           'TWITTER': DataKeys.TWITTER_URL}
 
             link_tags = bs.find('div', {'class': 'socials'}).findAll('a')
             for link_tag in link_tags:
@@ -255,7 +249,7 @@ class IcoBench(ScraperBase):
                         data[soc_mapping[soc.upper()]] = link_tag['href']
 
         except:
-            logging.warning(self.NOT_FOUND_MSG.format('Social links'))
+            logging.warning(self.NOT_FOUND_MSG.format(url, 'Social links'))
 
         try:
             logo_link = bs.find('div', {'class': 'image'}).find('img')
@@ -266,3 +260,4 @@ class IcoBench(ScraperBase):
         self.mutex.acquire()
         self.output_data.append(data)
         self.mutex.release()
+        return data

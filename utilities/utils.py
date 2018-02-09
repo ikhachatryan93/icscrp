@@ -299,13 +299,8 @@ user_agent = {'user-agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/2010010
 
 
 def load_page(url, parser):
-    try:
-        http = urllib3.PoolManager(1, headers=user_agent, timeout=10)
-        r = http.request('GET', url)
-    except SystemError as e:
-        if 'error return without exception set' not in str(e):
-            raise SyntaxError(e)
-
+    http = urllib3.PoolManager(1, headers=user_agent, timeout=10)
+    r = http.request('GET', url)
     return bs4.BeautifulSoup(r.data.decode('utf-8'), parser)
 
 
