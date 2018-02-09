@@ -1,14 +1,13 @@
 class BOOL_VALUES:
     YES = 'yes'
     NO = 'no'
-    AVAILABLE = 'A'
-    NOT_AVAILABLE = 'N.A'
+    AVAILABLE = '+'
+    NOT_AVAILABLE = '-'
 
 
 class DataKeys:
 
     # initialize data object with default values
-
 
     @staticmethod
     def initialize():
@@ -40,10 +39,10 @@ class DataKeys:
     COUNTRIES_RESTRICTED = 'countries_restricted'
 
     ACCEPTED_CURRENCIES = 'accepted_currencies'
-    #TOKEN_PRICE_BTC = 'token_price_bitcoin'
-    #TOKEN_PRICE_ETH = 'token_price_etherum'
-    #TOKEN_PRICE_LIT = 'token_price_litecoin'
-    #TOKEN_PRICE_USD = 'token_price_usd'
+    # TOKEN_PRICE_BTC = 'token_price_bitcoin'
+    # TOKEN_PRICE_ETH = 'token_price_etherum'
+    # TOKEN_PRICE_LIT = 'token_price_litecoin'
+    # TOKEN_PRICE_USD = 'token_price_usd'
     # yes or no
 
     # token price
@@ -66,3 +65,14 @@ class DataKeys:
     FACEBOOK_URL = 'facebook_page'
     ICOWEBSITE = 'webpage'
     LOGO_URL = 'logo_url'
+
+    # scores and ratings
+    INVESTMENT_RATING = 'investment_score'
+    HYPE_SCORE = 'hype_score'
+    RISK_SCORE = 'risk_score'
+
+    # icobench ratings
+    ICO_PROFILE_SCORE = 'ico_profile_score'
+    VISION_SCORE = 'vision_score'
+    TEAM_SCORE = 'team_score'
+    PRODUCT_SCORE = 'product_score'

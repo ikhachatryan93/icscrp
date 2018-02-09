@@ -7,6 +7,7 @@ import platform
 import json
 import sys
 import urllib
+import os
 
 from urllib import request
 from urllib.parse import urlsplit
@@ -16,6 +17,9 @@ from openpyxl import Workbook
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(dir_path, "drivers"))
 
 import bs4
 
@@ -205,7 +209,7 @@ def setup_firefox(bpath, maximize=True):
 
 
 def setup_phantomjs(bpath, maximize=True):
-    service_args = ['--ignore-ssl-errors=true', '--ssl-protocol=any']
+    service_args = ['--ignore-ssl-errors=true', '--ssl-protocol=any', '--load-images=no']
     driver = webdriver.PhantomJS(bpath, service_args=service_args)
     if maximize:
         driver.maximize_window()
@@ -292,6 +296,12 @@ def write_lines_to_file(name, urls):
                 print(str(e))
 
 
+def load_page_with_selenium(url, parser):
+    driver = setup_browser('phantomjs')
+    driver.get(url)
+    return bs4.BeautifulSoup(driver.page_source, parser)
+
+
 import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -304,7 +314,9 @@ def load_page(url, parser):
     return bs4.BeautifulSoup(r.data.decode('utf-8'), parser)
 
 
-def load_page1(url):
+def load_page1(url, parser):
+    import ssl
+    context = ssl._create_unverified_context()
     req = urllib.request.Request(
         url=url,
         data=None,
@@ -313,9 +325,14 @@ def load_page1(url):
         }
     )
 
-    data = urllib.request.urlopen(req, timeout=10)
+    import traceback
+    try:
+        data = urllib.request.urlopen(req, timeout=10, context=context)
+    except:
+        print(traceback.format_exc())
+        exit
 
-    return bs4.BeautifulSoup(data.read().decode('utf-8'), 'html5lib')
+    return bs4.BeautifulSoup(data.read().decode('utf-8'), parser)
 
 
 # Clicks element

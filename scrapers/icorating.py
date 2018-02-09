@@ -10,6 +10,7 @@ from urllib.request import URLError
 from urllib.request import urljoin
 
 from utilities.utils import load_page
+from utilities.utils import load_page_with_selenium
 
 from scrapers.data_keys import DataKeys
 from scrapers.data_keys import BOOL_VALUES
@@ -41,63 +42,27 @@ class ICORATING(ScraperBase):
         self.NOT_FOUND_MSG = "From {}: could not find {}"
 
         # location of listings in website, may be more than one
-        self.urls = ['https://www.trackico.io/']
-        self.domain = 'https://www.trackico.io/'
-
-    def scrape_listings_from_page(self, url):
-        # next page url from 'Next 'pagination tag
-        try:
-            bs = load_page(url, self.html_parser)
-        except URLError:
-            logging.error('Timeout error while scraping listings from %s', url)
-            return
-        except:
-            logging.error('Error while scraping listings from %s', url)
-            return
-
-        listings_urls = []
-        listings_tags = bs.select('a.card-body.text-center.pt-1.pb-10')
-        if listings_tags:
-            for listing_tag in listings_tags:
-                link = urljoin(self.domain, listing_tag['href'])
-                self.mutex.acquire()
-                listings_urls.append(link)
-                self.mutex.release()
-        return listings_urls
-
-    def scrape_listings_via_queries(self, urls):
-        pool = ThreadPool(self.max_threads)
-        listings_urls = list(tqdm.tqdm(pool.imap(self.scrape_listings_from_page, urls), total=len(urls)))
-        flat_list = [item for sublist in listings_urls for item in sublist]
-        pool.close()
-        pool.join()
-        return flat_list
+        self.urls = ['https://icorating.com/ico/?filter=all']
+        self.domain = 'https://icorating.com'
 
     def scrape_listings(self, url):
         # next page url from 'Next 'pagination tag
         try:
-            bs = load_page(url, self.html_parser)
+            bs = load_page_with_selenium(url, self.html_parser)
         except:
             logging.critical('Error while scraping listings from %s', url)
             return
 
+        urls = []
         try:
-            counter = bs.select_one('span.flex-grow.text-right.text-lighter.pr-2').text
-            listings_count = int(counter.split()[-1])
+            trs = bs.select('tr')
+            for tr in trs:
+                if tr.has_attr('data-href'):
+                    urls.append(urljoin(self.domain, tr['data-href']))
         except:
-            logging.critical('Could not extract data from'.format(url))
-            return
+            logging.critical('Could not extract listings from'.format(url))
 
-        if listings_count:
-            paging_count = listings_count // 24
-            if listings_count % 24 != 0:
-                paging_count += 1
-
-            url_query = self.domain + '{}/'
-            pages_urls = [url_query.format(x) for x in range(1, paging_count + 1)]
-            # pages_urls = [url_query.format(x) for x in range(1, 2)]
-
-            return self.scrape_listings_via_queries(pages_urls)
+        return urls
 
     def scrape_profile(self, url):
         data = DataKeys.initialize()
@@ -111,23 +76,77 @@ class ICORATING(ScraperBase):
             return
 
         try:
-            text = bs.find('div', {'class': 'uk-first-column'}).find('h1').text
+            text = bs.find('div', {'class': 'h1'}).find('h1').text
             # from "ICO NAME (ICN)" to "ICO NAME"
             data[DataKeys.NAME] = text.split('(')[0].strip
         except:
             logging.error(self.NOT_FOUND_MSG.format(url, 'ICO name'))
 
         try:
-            ratings_tag = bs.find('div', {'class': 'white-block-area'})
-            investment_tag= ratings_tag.find('span', text=re.compile('Investment rating', re.IGNORECASE))
-            if investment_tag:
-                inv_rating = investment_tag.find_next_sibling('span', {'class': 'score'}).text
-                if inv_rating:
-                    data[DataKeys.INV]
+            ratings_tag = bs.findAll('span', {'class': 'title'}, text=True)
+            for rating in ratings_tag:
+                # RISK
+                if rating.text.upper() == 'RISK SCORE':
+                    risk = rating.parent.find('span', {'class': 'score'}, text=True)
+                    if risk:
+                        risk_text = risk.text.split('/')
+                        if risk_text and len(risk_text) == 2:
+                            data[DataKeys.RISK_SCORE] = float(risk_text[0].strip())
+
+                # Hype
+                if rating.text.upper() == 'HYPE SCORE':
+                    hype = rating.parent.find('span', {'class': 'score'}, text=True)
+                    if hype:
+                        hype_text = hype.text.split('/')
+                        if hype_text and len(hype_text) == 2:
+                            data[DataKeys.HYPE_SCORE] = float(hype_text[0].strip())
+
+                # Investment
+                if rating.text.upper() == 'INVESTMENT RATING':
+                    inv = rating.parent.find('span', {'class': 'name'}, text=True)
+                    if inv:
+                        value = inv.text.upper()
+                        investment_ratings = {'POSITIVE+': 9,
+                                              'POSITIVE': 8,
+                                              'STABLE+': 7,
+                                              'STABLE': 6,
+                                              'RISKY+': 5,
+                                              'RISKY': 4,
+                                              'RISKY-': 3,
+                                              'NEGATIVE': 2,
+                                              'NEGATIVE-': 1,
+                                              'NA': BOOL_VALUES.NOT_AVAILABLE}
+                        rating = investment_ratings[value.upper()]
+                        if rating:
+                            data[DataKeys.INVESTMENT_RATING] = rating
+        except Exception as e:
+            logging.warning('Exception while scraping {} from {}'.format('rating info', url))
+
+        try:
+            link_tags = bs.findAll('a', {'target': '_blank'}, text=False)
+            soc_mapping = {'FACEBOOK': DataKeys.FACEBOOK_URL, 'GITHUB': DataKeys.GITHUB_URL,
+                           'MEDIUM': DataKeys.MEDIUM_URL,
+                           'TELEGRAM': DataKeys.TELEGRAM_URL, 'REDDIT': DataKeys.REDDIT_URL,
+                           'BTCTALK': DataKeys.BITCOINTALK_URL,
+                           'WEBSITE': DataKeys.ICOWEBSITE, 'LINKEDIN': DataKeys.LINKEDIN_URL,
+                           'TWITTER': DataKeys.TWITTER_URL}
+            for link_tag in link_tags:
+                try:
+                    text = link_tag.text
+                    key = soc_mapping[text.upper()]
+                    data[key] = link_tag['href']
+                except:
+                    continue
+
+
+
+
+
+
+
+
         except:
-            logging.warning(self.NOT_FOUND_MSG.format(url, 'rating info'))
-
-
+            logging.warning('Exception while scraping {} from {}'.format('links', url))
 
         ########
 

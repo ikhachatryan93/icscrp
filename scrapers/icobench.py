@@ -151,7 +151,10 @@ class IcoBench(ScraperBase):
         score_divs = bs.find('div', {'class': 'rating'}).find('div', {'class': 'distribution'}).findAll('div')
 
         # todo decide what to do in case of DATA_KEYS
-        data_mapping = {'ICO PROFILE': 'ico_profile', 'VISION': 'vision', 'TEAM': 'team', 'PRODUCT': 'product'}
+        data_mapping = {'ICO PROFILE': DataKeys.ICO_PROFILE_SCORE,
+                        'VISION': DataKeys.VISION_SCORE,
+                        'TEAM': DataKeys.TEAM_SCORE,
+                        'PRODUCT': DataKeys.PRODUCT_SCORE}
         for div in score_divs:
             label = str(div.find('label').text).strip()
             key = data_mapping.get(label.upper())
