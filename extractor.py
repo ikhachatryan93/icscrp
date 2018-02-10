@@ -1,26 +1,19 @@
 #! /bin/env python
-import sys
-import os
-
-dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(dir_path, "modules"))
-sys.path.append(os.path.join(dir_path, "drivers"))
-sys.path.append(os.path.join(dir_path, "scrapers"))
-
 import argparse
-import logging
-
-from utilities.mysql_wrapper import MySQL
+import os
+import sys
+import traceback
 
 from utilities.utils import configure_logging
 from utilities.utils import Configs
-from utilities.utils import write_to_excel
+from utilities.utils import write_to_csv
 
-from scrapers.base_scraper import ScraperBase
-from scrapers.icobench import IcoBench
 from scrapers.icorating import ICORATING
+from scrapers.icobench import IcoBench
 
-import traceback
+dir_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(os.path.join(dir_path, "modules"))
+sys.path.append(os.path.join(dir_path, "scrapers"))
 
 
 def parse_arguments():
@@ -37,20 +30,25 @@ def parse_arguments():
 
 
 def main():
+    logger = configure_logging(Configs.get('logging_handler'))
     parse_arguments()
-    data = []
-    try:
-        #scraper = IcoBench(Configs.get('max_threads'), Configs.get('max_browsers'))
-        #data = scraper.scrape_website()
-        scraper = ICORATING(Configs.get('max_threads'), Configs.get('max_browsers'))
-        data = scraper.scrape_website()
-        write_to_excel("out.xlsx", data)
-        data = []
-    except:
-        logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
-        exit(1)
 
-    pass
+    logger.info('asd')
+    logger.warning('dsa')
+    logger.error('asd')
+    try:
+        scraper = IcoBench(logger, Configs.get('max_threads'))
+        data = scraper.scrape_website()
+        write_to_csv("icobench.csv", data)
+    except :
+        logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+
+    try:
+        scraper = ICORATING(logger, Configs.get('max_threads'))
+        data = scraper.scrape_website()
+        write_to_csv("icorating.csv", data)
+    except:
+        logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
     # final_data = None
     # try:
@@ -71,5 +69,4 @@ def main():
 
 
 if __name__ == "__main__":
-    configure_logging()
     sys.exit(main())

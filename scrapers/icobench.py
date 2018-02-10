@@ -1,10 +1,8 @@
 import re
 import sys
-import time
 import tqdm
 
 from multiprocessing.pool import ThreadPool
-import logging
 from urllib.request import URLError
 from urllib.request import urljoin
 
@@ -16,9 +14,9 @@ from scrapers.base_scraper import ScraperBase
 
 
 class IcoBench(ScraperBase):
-    def __init__(self, max_threads, max_browsers):
+    def __init__(self, logger, max_threads=1, max_browsers=0, ):
 
-        super(IcoBench, self).__init__(max_threads, max_browsers)
+        super(IcoBench, self).__init__(logger, max_threads, max_browsers)
 
         # should be 'selenium' or 'bs4'
         # TODO: add scrapy support
@@ -30,12 +28,7 @@ class IcoBench(ScraperBase):
         # should be 'html5lib', 'lxml' or 'html.parser'
         self.html_parser = 'html5lib'
 
-        # should be 'file' or 'stream'
-        self.logger = 'stream'
-
         self.drivers = []
-
-        self.output_data = []
 
         self.NOT_FOUND_MSG = "From {}: could not find {}"
 
@@ -48,7 +41,7 @@ class IcoBench(ScraperBase):
         try:
             bs = load_page(url.split('&')[0], self.html_parser)
         except:
-            logging.error('Error while scraping listings from %s', url)
+            self.logger.error('Error while scraping listings from %s', url)
             return
 
         listings_tags = bs.find_all('a', {'class': 'image'}, href=True)
@@ -74,7 +67,7 @@ class IcoBench(ScraperBase):
         try:
             bs = load_page(url.split('&')[0], self.html_parser)
         except URLError:
-            logging.error('Timeout error while scraping listings from %s', url)
+            self.logger.error('Timeout error while scraping listings from %s', url)
             return
 
         paging = bs.find('a', {'class': 'next'}, href=True)
@@ -102,7 +95,7 @@ class IcoBench(ScraperBase):
         try:
             bs = load_page(url.split('&')[0], self.html_parser)
         except URLError:
-            logging.critical('Timeout error while scraping listings from %s', url)
+            self.logger.critical('Timeout error while scraping listings from %s', url)
             return
 
         paging = bs.find('a', {'class': 'next'}, href=True)
@@ -134,7 +127,7 @@ class IcoBench(ScraperBase):
         try:
             bs = load_page(url, self.html_parser)
         except:
-            logging.error('Error while scraping profile {}'.format(url))
+            self.logger.error('Error while scraping profile {}'.format(url))
             return
 
         try:
@@ -143,7 +136,7 @@ class IcoBench(ScraperBase):
             data[DataKeys.NAME] = name_and_description[0].text.strip()
             data[DataKeys.DESCRIPTION] = name_and_description[1].text.strip()
         except:
-            logging.warning(self.NOT_FOUND_MSG.format(url, 'Name and/or Description'))
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Name and/or Description'))
             data[DataKeys.NAME] = BOOL_VALUES.NOT_AVAILABLE
             data[DataKeys.DESCRIPTION] = BOOL_VALUES.NOT_AVAILABLE
 
@@ -193,7 +186,7 @@ class IcoBench(ScraperBase):
             except Exception as e:
                 data[DataKeys.ICO_START] = BOOL_VALUES.NOT_AVAILABLE
                 data[DataKeys.ICO_END] = BOOL_VALUES.NOT_AVAILABLE
-                logging.warning(self.NOT_FOUND_MSG.format(url, 'Date Info') + ' with message: '.format(str(e)))
+                self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Date Info') + ' with message: '.format(str(e)))
             ############## end of date info #################
 
             #################### Overall information #####################
@@ -230,10 +223,10 @@ class IcoBench(ScraperBase):
                         pass
 
             else:
-                logging.warning(self.NOT_FOUND_MSG.format(url, 'financial data 2'))
+                self.logger.warning(self.NOT_FOUND_MSG.format(url, 'financial data 2'))
 
         else:
-            logging.warning(self.NOT_FOUND_MSG.format(url, 'financial data'))
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'financial data'))
 
         # get links
         try:
@@ -252,15 +245,12 @@ class IcoBench(ScraperBase):
                         data[soc_mapping[soc.upper()]] = link_tag['href']
 
         except:
-            logging.warning(self.NOT_FOUND_MSG.format(url, 'Social links'))
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Social links'))
 
         try:
             logo_link = bs.find('div', {'class': 'image'}).find('img')
             data[DataKeys.LOGO_URL] = urljoin(self.domain, logo_link['src'])
         except:
-            logging.warning(self.NOT_FOUND_MSG.format('Logo url'))
+            self.logger.warning(self.NOT_FOUND_MSG.format('Logo url'))
 
-        self.mutex.acquire()
-        self.output_data.append(data)
-        self.mutex.release()
         return data

@@ -1,27 +1,19 @@
 import re
-import sys
-import time
-import tqdm
-
-import threading
-from multiprocessing.dummy import Pool as ThreadPool
-import logging
-from urllib.request import URLError
 from urllib.request import urljoin
 
+from scrapers.data_keys import BOOL_VALUES
+from scrapers.data_keys import DataKeys
+from scrapers.base_scraper import ScraperBase
 from utilities.utils import load_page
 from utilities.utils import load_page_with_selenium
 
-from scrapers.data_keys import DataKeys
-from scrapers.data_keys import BOOL_VALUES
-from scrapers.base_scraper import ScraperBase
-
 
 class ICORATING(ScraperBase):
-    def __init__(self, max_threads, max_browsers):
+    def __init__(self, logger, max_threads=1, max_browsers=0):
 
-        super(ICORATING, self).__init__(max_threads, max_browsers)
+        super(ICORATING, self).__init__(logger, max_threads, max_browsers)
 
+        self.max = 1
         # should be 'selenium' or 'bs4'
         # TODO: add scrapy support
         self.engine = 'bs4'
@@ -33,7 +25,7 @@ class ICORATING(ScraperBase):
         self.html_parser = 'html5lib'
 
         # should be 'file' or 'stream'
-        self.logger = 'stream'
+        self.logging_type = 'stream'
 
         self.drivers = []
 
@@ -50,7 +42,7 @@ class ICORATING(ScraperBase):
         try:
             bs = load_page_with_selenium(url, self.html_parser)
         except:
-            logging.critical('Error while scraping listings from %s', url)
+            self.logger.critical('Error while scraping listings from %s', url)
             return
 
         urls = []
@@ -60,27 +52,26 @@ class ICORATING(ScraperBase):
                 if tr.has_attr('data-href'):
                     urls.append(urljoin(self.domain, tr['data-href']))
         except:
-            logging.critical('Could not extract listings from'.format(url))
+            self.logger.critical('Could not extract listings from'.format(url))
 
         return urls
 
     def scrape_profile(self, url):
         data = DataKeys.initialize()
-
         data[DataKeys.PROFILE_URL] = url
 
         try:
             bs = load_page(url, self.html_parser)
         except:
-            logging.error('Could not scrape profile {}'.format(url))
+            self.logger.error('Could not scrape profile {}'.format(url))
             return
 
         try:
             text = bs.find('div', {'class': 'h1'}).find('h1').text
             # from "ICO NAME (ICN)" to "ICO NAME"
-            data[DataKeys.NAME] = text.split('(')[0].strip
+            data[DataKeys.NAME] = text.split('(')[0].strip()
         except:
-            logging.error(self.NOT_FOUND_MSG.format(url, 'ICO name'))
+            self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO name'))
 
         try:
             ratings_tag = bs.findAll('span', {'class': 'title'}, text=True)
@@ -120,36 +111,64 @@ class ICORATING(ScraperBase):
                         if rating:
                             data[DataKeys.INVESTMENT_RATING] = rating
         except Exception as e:
-            logging.warning('Exception while scraping {} from {}'.format('rating info', url))
+            self.logger.warning('Exception while scraping {} from {}'.format('rating info', url))
 
         try:
             link_tags = bs.findAll('a', {'target': '_blank'}, text=False)
             soc_mapping = {'FACEBOOK': DataKeys.FACEBOOK_URL, 'GITHUB': DataKeys.GITHUB_URL,
-                           'MEDIUM': DataKeys.MEDIUM_URL,
+                           'MEDIUM': DataKeys.MEDIUM_URL, 'INSTAGRAM': DataKeys.INSTAGRAM_URL,
                            'TELEGRAM': DataKeys.TELEGRAM_URL, 'REDDIT': DataKeys.REDDIT_URL,
                            'BTCTALK': DataKeys.BITCOINTALK_URL,
                            'WEBSITE': DataKeys.ICOWEBSITE, 'LINKEDIN': DataKeys.LINKEDIN_URL,
                            'TWITTER': DataKeys.TWITTER_URL}
             for link_tag in link_tags:
                 try:
-                    text = link_tag.text
-                    key = soc_mapping[text.upper()]
+                    text = link_tag.text.strip().upper()
+                    key = soc_mapping[text]
                     data[key] = link_tag['href']
                 except:
                     continue
-
-
-
-
-
-
-
-
         except:
-            logging.warning('Exception while scraping {} from {}'.format('links', url))
+            self.logger.warning('Exception while scraping {} from {}'.format('links', url))
 
-        ########
+        # logo link
+        try:
+            data[DataKeys.LOGO_URL] = urljoin(self.domain,
+                                              bs.find('div', {'class': 'share'}).find_previous_sibling('img')['src'])
+        except:
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'logo url'))
 
-        self.mutex.acquire()
-        self.output_data.append(data)
-        self.mutex.release()
+        # description
+        try:
+            data[DataKeys.DESCRIPTION] = bs.find('td', text='Description:').find_next_sibling().text
+        except:
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'description'))
+
+        bs = load_page(url + '/details', self.html_parser)
+        try:
+            info_map = {'Pre-ICO start date:': DataKeys.PRE_ICO_START,
+                        'Pre-ICO end date:': DataKeys.PRE_ICO_END,
+                        'Hard cap:': DataKeys.HARD_CAP,
+                        'ICO start date:': DataKeys.ICO_START,
+                        'ICO end date:': DataKeys.ICO_END,
+                        'Soft cap:': DataKeys.SOFT_CAP,
+                        'Ticker:': DataKeys.TOKEN_NAME,
+                        'ICO Platform:': DataKeys.PLATFORM,
+                        'Token price in USD:': DataKeys.ICO_PRICE,
+                        'Accepted Currencies:': DataKeys.ACCEPTED_CURRENCIES,
+                        'Country Limitations:': DataKeys.COUNTRIES_RESTRICTED,
+                        'Token Standard:': DataKeys.TOKEN_STANDARD,
+                        'Registration Country:': DataKeys.COUNTRY}
+
+            rows = bs.find_all('td', text=re.compile('.*:$'))
+            for row in rows:
+                try:
+                    if row.text in info_map:
+                        value = row.find_next_sibling().text.strip()
+                        data[info_map[row.text]] = value
+                except:
+                    continue
+        except:
+            self.logger.error(self.NOT_FOUND_MSG.format(url + '/details', 'info table'))
+
+        return data

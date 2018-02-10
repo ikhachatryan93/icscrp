@@ -1,22 +1,18 @@
-from configobj import ConfigObj, flatten_errors
-
-from validate import Validator
-from validate import VdtValueError
+import csv
 import logging
-import platform
-import json
-import sys
-import urllib
 import os
-
-from urllib import request
+import platform
+import sys
+import json
 from urllib.parse import urlsplit
 
-from os import sep, path, remove
+from configobj import ConfigObj, flatten_errors
 from openpyxl import Workbook
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
+from validate import Validator
+from validate import VdtValueError
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "drivers"))
@@ -33,13 +29,6 @@ class Configs:
     html_parser = options('html5lib', 'lxml', 'html.parser', default='html5lib')
     logging_handler = options('stream', 'file', default='stream')
     output_format = options('excel', 'json', default='excel')
-    testing = boolean(default=False)
-    max_items_extract = integer(min=1, max=1000, default=5)
-    
-    [pagination]
-    pagination_engine = options('bs4', 'selenium', default='selenium')
-    wait_before_pagination = integer(min=0, max=10, default=1)
-    wait_after_pagination = integer(min=0, max=10, default=1)
     '''
 
     file = r"configs.ini"
@@ -52,20 +41,18 @@ class Configs:
         results = cfg.validate(Validator(), copy=True)
 
         for entry in flatten_errors(cfg, results):
-
             [sectionList, key, error] = entry
-            if not error:
+            if not error and key:
                 msg = "The parameter %s was not in the config file\n" % key
                 msg += "Please check to make sure this parameter is present and there are no mis-spellings."
-                logging.error(msg)
+                print(msg)
 
             if key is not None:
                 if isinstance(error, VdtValueError):
                     optionString = cfg.configspec[key]
-                    msg = "The parameter %s was set to %s which is not one of the allowed values\n" % (
-                        key, cfg[key])
+                    msg = "The parameter %s was set to %s which is not one of the allowed values\n" % (key, cfg[key])
                     msg += "Please set the value to be in %s" % optionString
-                    logging.error(msg)
+                    print(msg)
 
     @staticmethod
     def parse_config_file():
@@ -77,29 +64,8 @@ class Configs:
         Configs.config['html_parser'] = config_parser['scraper']['html_parser']
         Configs.config['logging_handler'] = config_parser['scraper']['logging_handler']
         Configs.config['output_format'] = config_parser['scraper']['output_format']
-        Configs.config['testing'] = bool(config_parser['scraper']['testing'])
         Configs.config['max_threads'] = int(config_parser['scraper']['threads'])
         Configs.config['max_browsers'] = int(config_parser['scraper']['browsers'])
-        Configs.config['max_items_extract'] = config_parser['scraper']['max_items_extract']
-
-        # pagination
-        Configs.config['pagination_engine'] = config_parser['pagination']['pagination_engine']
-        Configs.config['wait_before_pagination'] = config_parser['pagination']['wait_before_pagination']
-        Configs.config['wait_after_pagination'] = config_parser['pagination']['wait_after_pagination']
-        Configs.config['pagination_tag'] = config_parser['pagination']['pagination_tag']
-        Configs.config['pagination_attribute'] = config_parser['pagination']['pagination_attribute']
-        Configs.config['pagination_attribute_value'] = config_parser['pagination']['pagination_attribute_value']
-        Configs.config['pagination_xpath'] = config_parser['pagination']['pagination_xpath']
-
-        # listings
-        Configs.config['listing_tag'] = config_parser['listings']['listing_tag']
-        Configs.config['listing_attribute'] = config_parser['listings']['listing_attribute']
-        Configs.config['listing_attribute_value'] = config_parser['listings']['listing_attribute_value']
-
-        # profile items
-        Configs.config['item_ids'] = config_parser['profile item id']
-        Configs.config['item_xpaths'] = config_parser['profile item xpath']
-        Configs.config['args_for_find'] = config_parser['bs4 find args']
 
         Configs.parsed = True
 
@@ -124,29 +90,35 @@ def get_domain(url):
 
 
 # end of configs class
-def configure_logging():
-    rootLogger = logging.getLogger()
-    logFormatter = logging.Formatter("%(filename)s:%(lineno)s %(asctime)s [%(levelname)-5.5s]  %(message)s")
+def configure_logging(handler_type):
+    ####### disable root logger ########
+    hnd = logging.Handler()
+    logging.getLogger().addHandler(hnd)
+    ####################################
 
-    if "file" in str(Configs.get("logging_handler")):
-        dir_path = path.dirname(path.realpath(__file__))
-        filename = dir_path + sep + "scraper.log"
-        remove(filename) if path.exists(filename) else None
+    logger = logging.getLogger('Log')
+    if "file" in str(handler_type):
+        filename = dir_path + os.sep + "scraper.log"
+        os.remove(filename) if os.path.exists(filename) else None
         handler = logging.FileHandler(filename=filename)
     else:
         handler = logging.StreamHandler()
 
+
+    logFormatter = logging.Formatter("%(filename)s:%(lineno)s %(asctime)s [%(levelname)-5.5s]  %(message)s")
+    handler.setLevel(logging.DEBUG)
     handler.setFormatter(logFormatter)
-    rootLogger.addHandler(handler)
-    rootLogger.setLevel(logging.INFO)
-    return rootLogger
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+
+    return logger
 
 
 def setup_browser(browser=""):
     if browser == "":
         browser = Configs.get("driver")
-    dir_path = path.dirname(path.realpath(__file__))
-    bpath = dir_path + sep + "drivers" + sep + browser
+    bpath = dir_path + os.sep + "drivers" + os.sep + browser
 
     if "Windows" in platform.system():
         bpath += ".exe"
@@ -218,13 +190,12 @@ def setup_phantomjs(bpath, maximize=True):
 
 def write_output(file_name, data):
     file_format = Configs.get("output_format")
-    if file_format == "json":
+    if file_format == 'json':
         write_json_file(file_name.rsplit(".", 1)[0] + ".json", data)
-    else:
-        if file_format != "excel":
-            logging.warning("Unknown output format is specified, using excel by default")
-
+    elif file_format == 'excel':
         write_to_excel(file_name.rsplit(".", 1)[0] + ".xlsx", data)
+    else:
+        write_to_csv(file_name, data)
 
 
 def write_json_file(name, data):
@@ -252,34 +223,12 @@ def write_to_excel(xlsx_file, dict_list=None, sheet_title_1=None):
     wb.save(xlsx_file)
 
 
-def write_to_excel_reservation(xlsx_file, dict_list=None, sheet_title_1=None):
-    if dict_list is None:
-        dict_list = []
-        logging.warning('Warning: No data was available for writing into the worksheet {}'.format(sheet_title_1))
-
-    wb = Workbook(write_only=False)
-    wb.guess_types = True
-    ws = wb.create_sheet(title=sheet_title_1)
-    del wb['Sheet']
-
-    records = []
-    for d in dict_list:
-        pair = []
-        for k, v in d.items():
-            from_ = k.split("to")[0]
-            to_ = k.split("to")[1]
-            pair = [from_, to_, v]
-        records.append(pair)
-
-    ws.append(["Date from", "Date to", "Occupancy Ratio"])
-    for record in records:
-        ws.append(record)
-    wb.save(xlsx_file)
-
-
-def read_excel_file(excel_file):
-    xls = ExcelFile(excel_file)
-    return xls.parse(xls.sheet_names[0])
+def write_to_csv(filename, toCSV):
+    keys = toCSV[0].keys()
+    with open(filename, 'w', encoding='utf-8') as output_file:
+        dict_writer = csv.DictWriter(output_file, keys, lineterminator='\n')
+        dict_writer.writeheader()
+        dict_writer.writerows(toCSV)
 
 
 def append_into_file(file, string):
@@ -312,27 +261,6 @@ def load_page(url, parser):
     http = urllib3.PoolManager(1, headers=user_agent, timeout=10)
     r = http.request('GET', url)
     return bs4.BeautifulSoup(r.data.decode('utf-8'), parser)
-
-
-def load_page1(url, parser):
-    import ssl
-    context = ssl._create_unverified_context()
-    req = urllib.request.Request(
-        url=url,
-        data=None,
-        headers={
-            'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'
-        }
-    )
-
-    import traceback
-    try:
-        data = urllib.request.urlopen(req, timeout=10, context=context)
-    except:
-        print(traceback.format_exc())
-        exit
-
-    return bs4.BeautifulSoup(data.read().decode('utf-8'), parser)
 
 
 # Clicks element

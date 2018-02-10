@@ -6,9 +6,6 @@ class BOOL_VALUES:
 
 
 class DataKeys:
-
-    # initialize data object with default values
-
     @staticmethod
     def initialize():
         # get all members
@@ -24,7 +21,10 @@ class DataKeys:
     TOKEN_NAME = 'token_name'
     PROFILE_URL = 'ico_url'
     DESCRIPTION = 'description'
+    TOKEN_STANDARD = 'standard'
     PLATFORM = 'platform'
+    PRE_ICO_START = 'pre_ico_start'
+    PRE_ICO_END = 'pre_ico_end'
     ICO_START = 'ico_start'
     ICO_END = 'ico_end'
     STATUS = 'status'
@@ -51,9 +51,6 @@ class DataKeys:
     KYC = 'kyc'
     WHITELIST = 'whitelist'
 
-    # scores
-    OVERALL_SCORES = 'website_overall_rating'
-
     # social pages
     GITHUB_URL = 'github_page'
     TELEGRAM_URL = 'telegram_page'
@@ -61,10 +58,14 @@ class DataKeys:
     MEDIUM_URL = 'medium_page'
     LINKEDIN_URL = 'linkedin_page'
     TWITTER_URL = 'twitter_page'
+    INSTAGRAM_URL = 'instagram_url'
     REDDIT_URL = 'reddit_page'
     FACEBOOK_URL = 'facebook_page'
     ICOWEBSITE = 'webpage'
     LOGO_URL = 'logo_url'
+
+    # scores
+    OVERALL_SCORES = 'website_overall_rating'
 
     # scores and ratings
     INVESTMENT_RATING = 'investment_score'
