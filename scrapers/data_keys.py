@@ -18,7 +18,7 @@ class DataKeys:
         return data
 
     NAME = 'name'
-    TOKEN_NAME = 'token_name'
+    TOKEN_NAME = 'ticker'
     PROFILE_URL = 'ico_url'
     DESCRIPTION = 'description'
     TOKEN_STANDARD = 'standard'
@@ -70,6 +70,10 @@ class DataKeys:
 
     # scores and ratings
     INVESTMENT_RATING = 'investment_score'
+
+    # icodrops
+    ROI_SCORE = 'roi_score'
+
     HYPE_SCORE = 'hype_score'
     RISK_SCORE = 'risk_score'
 

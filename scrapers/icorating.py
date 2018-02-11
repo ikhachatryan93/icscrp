@@ -8,10 +8,10 @@ from utilities.utils import load_page
 from utilities.utils import load_page_with_selenium
 
 
-class ICORATING(ScraperBase):
+class IcoRating(ScraperBase):
     def __init__(self, logger, max_threads=1, max_browsers=0):
 
-        super(ICORATING, self).__init__(logger, max_threads, max_browsers)
+        super(IcoRating, self).__init__(logger, max_threads, max_browsers)
 
         self.max = 1
         # should be 'selenium' or 'bs4'
