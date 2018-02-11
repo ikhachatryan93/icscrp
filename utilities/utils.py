@@ -246,7 +246,7 @@ def write_lines_to_file(name, urls):
 
 
 def load_page_with_selenium(url, parser):
-    driver = setup_browser('phantomjs')
+    driver = setup_browser('firefox')
     driver.get(url)
     return bs4.BeautifulSoup(driver.page_source, parser)
 

@@ -46,8 +46,8 @@ class DataKeys:
     # yes or no
 
     # token price
-    PRE_ICO_PRICE = 'pre_ico_price'
-    ICO_PRICE = 'ico_price'
+    PRE_ICO_PRICE = 'pre_ico_token_price'
+    ICO_PRICE = 'ico_token_price'
     KYC = 'kyc'
     WHITELIST = 'whitelist'
 
@@ -63,6 +63,7 @@ class DataKeys:
     FACEBOOK_URL = 'facebook_page'
     ICOWEBSITE = 'webpage'
     LOGO_URL = 'logo_url'
+    SLACK_URL = 'slack_url'
 
     # scores
     OVERALL_SCORES = 'website_overall_rating'

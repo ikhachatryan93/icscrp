@@ -7,9 +7,11 @@ import traceback
 from utilities.utils import configure_logging
 from utilities.utils import Configs
 from utilities.utils import write_to_csv
+from utilities.utils import write_to_excel
 
 from scrapers.icorating import ICORATING
 from scrapers.icobench import IcoBench
+from scrapers.icobazaar import IcoBazaar
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "modules"))
@@ -36,17 +38,25 @@ def main():
     logger.info('asd')
     logger.warning('dsa')
     logger.error('asd')
-    try:
-        scraper = IcoBench(logger, Configs.get('max_threads'))
-        data = scraper.scrape_website()
-        write_to_csv("icobench.csv", data)
-    except :
-        logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    # try:
+    #     scraper = IcoBench(logger, Configs.get('max_threads'))
+    #     data = scraper.scrape_website()
+    #     write_to_csv("icobench.csv", data)
+    # except :
+    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+
+    # try:
+    #     scraper = ICORATING(logger, Configs.get('max_threads'))
+    #     data = scraper.scrape_website()
+    #     write_to_csv("icorating.csv", data)
+    # except:
+    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
     try:
-        scraper = ICORATING(logger, Configs.get('max_threads'))
+        scraper = IcoBazaar(logger, Configs.get('max_threads'))
         data = scraper.scrape_website()
-        write_to_csv("icorating.csv", data)
+        #write_to_csv("icobazaar.csv", data)
+        write_to_excel('icobazaar.xls',dict_list=data)
     except:
         logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
