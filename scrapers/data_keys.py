@@ -76,6 +76,7 @@ class DataKeys:
 
     HYPE_SCORE = 'hype_score'
     RISK_SCORE = 'risk_score'
+    USER_SCORE = 'users_rating'
 
     # icobench ratings
     ICO_PROFILE_SCORE = 'ico_profile_score'

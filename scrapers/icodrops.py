@@ -67,18 +67,19 @@ class IcoDrops(ScraperBase):
         except:
             self.logger.error('Could not scrape profile {}'.format(url))
             return
+        self.logger.error('Could not scrape profile {}'.format(url))
 
         # name
         try:
             text = bs.find('div', {'class': 'ico-main-info'}).find('h3').text
             # from "ICO NAME (ICN)" to "ICO NAME"
-            data[DataKeys.NAME] = text.split()
+            data[DataKeys.NAME] = text.strip()
         except:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO name'))
 
         # description
         try:
-            data[DataKeys.DESCRIPTION] = bs.find('div', {'class': 'ico-description'}).text
+            data[DataKeys.DESCRIPTION] = bs.find('div', {'class': 'ico-description'}).text.strip()
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'description'))
 
@@ -117,7 +118,7 @@ class IcoDrops(ScraperBase):
                 if len(hh) == 2:
                     key = hh[0].text.strip().split('\n')[0].upper()
                     if key in score_map:
-                        data[key] = hh[1].text
+                        data[key] = hh[1].text.strip()
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'rating'))
 
@@ -138,16 +139,13 @@ class IcoDrops(ScraperBase):
                 map = {'Ticker:': DataKeys.TOKEN_NAME, }
                 if 'Ticker:' in info.text:
                     try:
-                        data[DataKeys.TOKEN_NAME] = info.parent.text.split(':')[1]
+                        data[DataKeys.TOKEN_NAME] = info.parent.text.split(':')[1].strip()
                     except:
                         self.logger.error('Could not find existing info')
-
-
-
             pass
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'info'))
 
-        pass
+        return data
 
 

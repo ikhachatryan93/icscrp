@@ -29,8 +29,6 @@ class IcoRating(ScraperBase):
 
         self.drivers = []
 
-        self.output_data = []
-
         self.NOT_FOUND_MSG = "From {}: could not find {}"
 
         # location of listings in website, may be more than one
