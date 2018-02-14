@@ -13,21 +13,8 @@ class IcoRating(ScraperBase):
 
         super(IcoRating, self).__init__(logger, max_threads, max_browsers)
 
-        self.max = 1
-        # should be 'selenium' or 'bs4'
-        # TODO: add scrapy support
-        self.engine = 'bs4'
-
-        # should be 'firefox', 'chrome' or 'phantomjs'(headless)
-        self.browser_name = None
-
         # should be 'html5lib', 'lxml' or 'html.parser'
         self.html_parser = 'html5lib'
-
-        # should be 'file' or 'stream'
-        self.logging_type = 'stream'
-
-        self.drivers = []
 
         self.NOT_FOUND_MSG = "From {}: could not find {}"
 

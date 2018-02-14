@@ -37,12 +37,12 @@ def main():
     logger = configure_logging(Configs.get('logging_handler'))
     parse_arguments()
 
-    # try:
-    #     scraper = TokenTops(logger, Configs.get('max_threads'))
-    #     data = scraper.scrape_website()
-    #     write_to_csv("tokentops.csv", data)
-    # except:
-    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    try:
+        scraper = TokenTops(logger, Configs.get('max_threads'))
+        data = scraper.scrape_website()
+        write_to_csv("tokentops.csv", data)
+    except:
+        logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
     # try:
     #     scraper = IcoRating(logger, Configs.get('max_threads'))
@@ -51,21 +51,20 @@ def main():
     # except:
     #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
     #
-    # # try:
-    # #     scraper = IcoBazaar(logger, Configs.get('max_threads'))
-    # #     data = scraper.scrape_website()
-    # #     write_to_csv("icobazaar.csv", data)
-    # #     #write_to_excel('icobazaar.xlsx',dict_list=data)
-    # # except:
-    # #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    # try:
+    #     scraper = IcoBazaar(logger, Configs.get('max_threads'))
+    #     data = scraper.scrape_website()
+    #     write_to_csv("icobazaar.csv", data)
+    #     #write_to_excel('icobazaar.xlsx',dict_list=data)
+    # except:
+    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
     #
-    try:
-        scraper = IcoDrops(logger, Configs.get('max_threads'))
-        data = scraper.scrape_website()
-        write_to_csv("icodrops.csv", data)
-    except :
-        logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
-
+    # try:
+    #     scraper = IcoDrops(logger, Configs.get('max_threads'))
+    #     data = scraper.scrape_website()
+    #     write_to_csv("icodrops.csv", data)
+    # except :
+    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
     # try:
     #     scraper = IcoBench(logger, Configs.get('max_threads'))
@@ -87,6 +86,7 @@ def main():
     # except Exception as e:
     #    logging.error(str(e))
     #    exit(2)
+
 
 # try:
 #    host, port, user, password, db = parse_arguments()

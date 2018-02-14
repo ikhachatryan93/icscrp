@@ -14,7 +14,6 @@ from utilities.utils import setup_browser
 
 from urllib.request import urljoin
 
-
 class TokenTops(ScraperBase):
     def __init__(self, logger, max_threads=1, max_browsers=0):
 
@@ -25,15 +24,10 @@ class TokenTops(ScraperBase):
         self.engine = 'bs4'
 
         # should be 'firefox', 'chrome' or 'phantomjs'(headless)
-        self.browser_name = 'firefox'
+        self.browser_name = 'phantomjs'
 
         # should be 'html5lib', 'lxml' or 'html.parser'
         self.html_parser = 'lxml'
-
-        # should be 'file' or 'stream'
-        self.logging_type = 'stream'
-
-        self.drivers = []
 
         self.mutex = Lock()
 
@@ -44,34 +38,34 @@ class TokenTops(ScraperBase):
         self.domain = 'https://www.tokentops.com/'
 
     def scrape_listings(self, url):
-        # next page url from 'Next 'pagination tag
-        # try:
-        #     driver = setup_browser(self.browser_name)
-        # except:
-        #     self.logger.critical('Error while scraping listings from %s', url)
-        #     return
+        try:
+            driver = setup_browser(self.browser_name)
+        except:
+            self.logger.critical('Error while scraping listings from %s', url)
+            return
 
-        # driver.get(url)
-        # urls = []
-        # wait = WebDriverWait(driver, 5)
-        # try:
-        #     while True:
-        #         elements = driver.find_elements_by_css_selector('.t_wrap.t_line')
-        #         for e in elements:
-        #             urls.append(e.get_attribute('href'))
-        #         next_ = wait.until(EC.presence_of_element_located((By.XPATH, ('//a[contains(text(), "»") and @class="pagination__link"]'))))
-        #         if next_:
-        #             click(driver, next_)
-        #         else:
-        #             break
-        # except:
-        #     if len(urls) == 0:
-        #         self.logger.critical('Could not extract listings from'.format(url))
-        bs = load_page(url, self.html_parser)
-        tags = bs.find('div', {'class': 'upcoming-sec__main'}).findAll('a', {'target': '_blank'})
+        driver.get(url)
         urls = []
-        for tag in tags:
-            urls.append(tag['href'])
+        wait = WebDriverWait(driver, 5)
+        try:
+            while True:
+                elements = driver.find_elements_by_css_selector('.t_wrap.t_line')
+                for e in elements:
+                    urls.append(e.get_attribute('href'))
+                next_ = wait.until(EC.presence_of_element_located((By.XPATH, ('//a[contains(text(), "»") and @class="pagination__link"]'))))
+                if next_:
+                    click(driver, next_)
+                else:
+                    break
+        except:
+            if len(urls) == 0:
+                self.logger.critical('Could not extract listings from'.format(url))
+
+        # bs = load_page(url, self.html_parser)
+        # tags = bs.find('div', {'class': 'upcoming-sec__main'}).findAll('a', {'target': '_blank'})
+        # urls = []
+        # for tag in tags:
+        #     urls.append(tag['href'])
 
         return urls
 
@@ -100,8 +94,9 @@ class TokenTops(ScraperBase):
 
         # overall scores
         try:
-            data[DataKeys.OVERALL_SCORES] = bs.find('div', {'class': 'rating_block'}).find('span', {
-                'class': 'rating-text'}).text.strip()
+            score = bs.find('div', {'class': 'rating_block'}).find('span', {'class': 'rating-text'}).text.strip()
+            if score != 0:
+                data[DataKeys.OVERALL_SCORES] = score
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO logo'))
 
@@ -122,13 +117,11 @@ class TokenTops(ScraperBase):
                         data[soc_mapping[key]] = target['href']
         except:
             self.logger.error('Someting went wrong in {}, when scraping social links'.format(url))
-        
-        self.logger.error('Someting went wrong in {}, when scraping social links'.format(url))
 
         # details
         details_mapping = {'START DATE': DataKeys.ICO_START, 'CLOSE DATE': DataKeys.ICO_END,
                            'TOKEN SYMBOL': DataKeys.TOKEN_NAME,
-                           'SMART CONTRACT BLOCKCHAIN': DataKeys.PLATFORM, 'AMOUNT_RAISED': DataKeys.RAISED}
+                           'SMART CONTRACT BLOCKCHAIN': DataKeys.PLATFORM, 'AMOUNT RAISED': DataKeys.RAISED}
         try:
             details = bs.findAll('div', {'class': 'page-details__info-row'})
             for detail in details:
@@ -143,30 +136,35 @@ class TokenTops(ScraperBase):
         # description
         try:
             div_tag = bs.find('div', {'class': 'show-more-wrap show-more--big2'})
-            description_tag = div_tag.find_next_sibling('h2', text=True)
+            description_tag = div_tag.find('h2', text=True)
             if description_tag:
                 data[DataKeys.DESCRIPTION] = description_tag.text.strip()
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Description'))
 
-
         # review scores
         try:
             review_sum = 0
             total_reviews = 0
-            user_reviews = bs.find('div', {'id': 'section-review-block'}).find('div', {'class': 'rat-stars'})
-            for review in user_reviews:
+            review_blocks = bs.findAll('div', {'id': 'section-review-block'})
+            reviews = []
+            for block in review_blocks:
+                reviews += block.findAll('div', {'class': 'rat-stars'})
+
+            for review in reviews:
                 score = review.find('span')
-                if score and score.has_attribute('style'):
+                if score and score.has_attr('style'):
                     try:
-                        review = int(re.search('\d\d{1,2}', score['style']).group())
-                        review_sum += review
+                        value = int(re.search('\d(\d{1,2})?', score['style']).group())
+                        if value == 0:
+                            continue
+                        review_sum += value
                         total_reviews += 1
                     except:
                         self.logger.warning('Could not find score percentage from {}'.format(url))
 
             if total_reviews != 0 and review_sum != 0:
-                data[DataKeys.USER_SCORE] = review_sum / total_reviews
+                data[DataKeys.USER_SCORE] = review_sum // total_reviews
         except:
             pass
 
