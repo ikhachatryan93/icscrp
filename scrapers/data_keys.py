@@ -64,6 +64,7 @@ class DataKeys:
     ICOWEBSITE = 'webpage'
     LOGO_URL = 'logo_url'
     SLACK_URL = 'slack_url'
+    YOUTUBE_URL = 'youtube_url'
 
     # scores
     OVERALL_SCORES = 'website_overall_rating'
