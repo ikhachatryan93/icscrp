@@ -61,7 +61,7 @@ class DataKeys:
     INSTAGRAM_URL = 'instagram_url'
     REDDIT_URL = 'reddit_page'
     FACEBOOK_URL = 'facebook_page'
-    ICOWEBSITE = 'webpage'
+    WEBSITE = 'webpage'
     LOGO_URL = 'logo_url'
     SLACK_URL = 'slack_url'
 

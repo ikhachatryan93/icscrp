@@ -121,7 +121,7 @@ class IcoBazaar(ScraperBase):
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'Sidebar'))
             pass
         try:
-            data[DataKeys.ICOWEBSITE] = bs.find('div', {'class': 'com-sidebar'}).find('a')['href']
+            data[DataKeys.WEBSITE] = bs.find('div', {'class': 'com-sidebar'}).find('a')['href']
         except:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO website'))
 
@@ -144,7 +144,7 @@ class IcoBazaar(ScraperBase):
 
         # getting social pages
         # TODO: maybe will be necessary to add other community types
-        map = {'website': DataKeys.ICOWEBSITE, 'bitcointalk': DataKeys.BITCOINTALK_URL,
+        map = {'website': DataKeys.WEBSITE, 'bitcointalk': DataKeys.BITCOINTALK_URL,
                'twitter': DataKeys.TWITTER_URL, 'facebook': DataKeys.FACEBOOK_URL,
                'telegram': DataKeys.TELEGRAM_URL, 'github': DataKeys.GITHUB_URL,
                'reddit': DataKeys.REDDIT_URL, 'linkedin': DataKeys.LINKEDIN_URL, 'slack': DataKeys.SLACK_URL}

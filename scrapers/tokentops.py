@@ -105,7 +105,7 @@ class TokenTops(ScraperBase):
                        'Blog': DataKeys.MEDIUM_URL,
                        'Telegram': DataKeys.TELEGRAM_URL, 'Reddit': DataKeys.REDDIT_URL,
                        'Bitcoin Talk': DataKeys.BITCOINTALK_URL,
-                       'Website': DataKeys.ICOWEBSITE, 'Linkedin': DataKeys.LINKEDIN_URL,
+                       'Website': DataKeys.WEBSITE, 'Linkedin': DataKeys.LINKEDIN_URL,
                        'Twitter': DataKeys.TWITTER_URL}
 
         try:

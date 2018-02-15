@@ -234,7 +234,7 @@ class IcoBench(ScraperBase):
                            'MEDIUM': DataKeys.MEDIUM_URL,
                            'TELEGRAM': DataKeys.TELEGRAM_URL, 'REDDIT': DataKeys.REDDIT_URL,
                            'BITCOINTALK': DataKeys.BITCOINTALK_URL,
-                           'WWW': DataKeys.ICOWEBSITE, 'LINKEDIN': DataKeys.LINKEDIN_URL,
+                           'WWW': DataKeys.WEBSITE, 'LINKEDIN': DataKeys.LINKEDIN_URL,
                            'TWITTER': DataKeys.TWITTER_URL}
 
             link_tags = bs.find('div', {'class': 'socials'}).findAll('a')

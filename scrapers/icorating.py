@@ -104,7 +104,7 @@ class IcoRating(ScraperBase):
                            'MEDIUM': DataKeys.MEDIUM_URL, 'INSTAGRAM': DataKeys.INSTAGRAM_URL,
                            'TELEGRAM': DataKeys.TELEGRAM_URL, 'REDDIT': DataKeys.REDDIT_URL,
                            'BTCTALK': DataKeys.BITCOINTALK_URL,
-                           'WEBSITE': DataKeys.ICOWEBSITE, 'LINKEDIN': DataKeys.LINKEDIN_URL,
+                           'WEBSITE': DataKeys.WEBSITE, 'LINKEDIN': DataKeys.LINKEDIN_URL,
                            'TWITTER': DataKeys.TWITTER_URL}
             for link_tag in link_tags:
                 try:
