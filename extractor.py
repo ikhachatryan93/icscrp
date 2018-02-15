@@ -88,6 +88,14 @@ def main():
     # except:
     #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
+    # try:
+    #     scraper = TrackIco(logger, Configs.get('max_threads'))
+    #     data = scraper.scrape_website()
+    #     write_to_excel('trackico.xls', dict_list=data)
+    # except:
+    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+
+
     # final_data = None
     # try:
     #    final_data = data_processor.merge_data(data)
