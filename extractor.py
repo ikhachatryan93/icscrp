@@ -9,9 +9,12 @@ from utilities.utils import Configs
 from utilities.utils import write_to_csv
 from utilities.utils import write_to_excel
 
-from scrapers.icorating import ICORATING
+from scrapers.icorating import IcoRating
 from scrapers.icobench import IcoBench
 from scrapers.icobazaar import IcoBazaar
+from scrapers.icodrops import IcoDrops
+from scrapers.tokentops import TokenTops
+from scrapers.icostats import IcoStats
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "modules"))
@@ -35,9 +38,42 @@ def main():
     logger = configure_logging(Configs.get('logging_handler'))
     parse_arguments()
 
-    logger.info('asd')
-    logger.warning('dsa')
-    logger.error('asd')
+    try:
+        scraper = IcoStats(logger, Configs.get('max_threads'))
+        data = scraper.scrape_website()
+        write_to_csv("icostats.csv", data)
+    except:
+        logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+
+    # try:
+    #     scraper = TokenTops(logger, Configs.get('max_threads'))
+    #     data = scraper.scrape_website()
+    #     write_to_csv("tokentops.csv", data)
+    # except:
+    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+
+    # try:
+    #     scraper = IcoRating(logger, Configs.get('max_threads'))
+    #     data = scraper.scrape_website()
+    #     write_to_csv("icorating.csv", data)
+    # except:
+    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    #
+    # try:
+    #     scraper = IcoBazaar(logger, Configs.get('max_threads'))
+    #     data = scraper.scrape_website()
+    #     write_to_csv("icobazaar.csv", data)
+    #     #write_to_excel('icobazaar.xlsx',dict_list=data)
+    # except:
+    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    #
+    # try:
+    #     scraper = IcoDrops(logger, Configs.get('max_threads'))
+    #     data = scraper.scrape_website()
+    #     write_to_csv("icodrops.csv", data)
+    # except :
+    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+
     # try:
     #     scraper = IcoBench(logger, Configs.get('max_threads'))
     #     data = scraper.scrape_website()
@@ -46,19 +82,11 @@ def main():
     #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
     # try:
-    #     scraper = ICORATING(logger, Configs.get('max_threads'))
+    #     scraper = IcoRating(logger, Configs.get('max_threads'))
     #     data = scraper.scrape_website()
     #     write_to_csv("icorating.csv", data)
     # except:
     #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
-
-    try:
-        scraper = IcoBazaar(logger, Configs.get('max_threads'))
-        data = scraper.scrape_website()
-        #write_to_csv("icobazaar.csv", data)
-        write_to_excel('icobazaar.xls',dict_list=data)
-    except:
-        logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
     # final_data = None
     # try:
@@ -67,15 +95,16 @@ def main():
     #    logging.error(str(e))
     #    exit(2)
 
-    # try:
-    #    host, port, user, password, db = parse_arguments()
-    #    mysql_db = MySQL(host, port, user, password, db)
-    #    mysql_db.connect()
-    #    mysql_db.insert(final_data)
-    #    mysql_db.disconnect()
-    # except Exception as e:
-    #    logging.error(str(e))
-    #    exit(3)
+
+# try:
+#    host, port, user, password, db = parse_arguments()
+#    mysql_db = MySQL(host, port, user, password, db)
+#    mysql_db.connect()
+#    mysql_db.insert(final_data)
+#    mysql_db.disconnect()
+# except Exception as e:
+#    logging.error(str(e))
+#    exit(3)
 
 
 if __name__ == "__main__":

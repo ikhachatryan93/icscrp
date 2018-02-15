@@ -104,7 +104,6 @@ def configure_logging(handler_type):
     else:
         handler = logging.StreamHandler()
 
-
     logFormatter = logging.Formatter("%(filename)s:%(lineno)s %(asctime)s [%(levelname)-5.5s]  %(message)s")
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(logFormatter)
@@ -261,6 +260,11 @@ def load_page(url, parser):
     http = urllib3.PoolManager(1, headers=user_agent, timeout=10)
     r = http.request('GET', url)
     return bs4.BeautifulSoup(r.data.decode('utf-8'), parser)
+
+
+def move_to_element(driver, element):
+    actions = ActionChains(driver)
+    actions.move_to_element(element).perform()
 
 
 # Clicks element

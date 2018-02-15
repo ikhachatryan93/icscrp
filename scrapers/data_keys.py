@@ -18,7 +18,7 @@ class DataKeys:
         return data
 
     NAME = 'name'
-    TOKEN_NAME = 'token_name'
+    TOKEN_NAME = 'ticker'
     PROFILE_URL = 'ico_url'
     DESCRIPTION = 'description'
     TOKEN_STANDARD = 'standard'
@@ -61,7 +61,7 @@ class DataKeys:
     INSTAGRAM_URL = 'instagram_url'
     REDDIT_URL = 'reddit_page'
     FACEBOOK_URL = 'facebook_page'
-    ICOWEBSITE = 'webpage'
+    WEBSITE = 'webpage'
     LOGO_URL = 'logo_url'
     SLACK_URL = 'slack_url'
     YOUTUBE_URL = 'youtube_url'
@@ -71,8 +71,13 @@ class DataKeys:
 
     # scores and ratings
     INVESTMENT_RATING = 'investment_score'
+
+    # icodrops
+    ROI_SCORE = 'roi_score'
+
     HYPE_SCORE = 'hype_score'
     RISK_SCORE = 'risk_score'
+    USER_SCORE = 'users_rating'
 
     # icobench ratings
     ICO_PROFILE_SCORE = 'ico_profile_score'

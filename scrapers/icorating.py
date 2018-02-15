@@ -8,28 +8,13 @@ from utilities.utils import load_page
 from utilities.utils import load_page_with_selenium
 
 
-class ICORATING(ScraperBase):
+class IcoRating(ScraperBase):
     def __init__(self, logger, max_threads=1, max_browsers=0):
 
-        super(ICORATING, self).__init__(logger, max_threads, max_browsers)
-
-        self.max = 1
-        # should be 'selenium' or 'bs4'
-        # TODO: add scrapy support
-        self.engine = 'bs4'
-
-        # should be 'firefox', 'chrome' or 'phantomjs'(headless)
-        self.browser_name = None
+        super(IcoRating, self).__init__(logger, max_threads, max_browsers)
 
         # should be 'html5lib', 'lxml' or 'html.parser'
         self.html_parser = 'html5lib'
-
-        # should be 'file' or 'stream'
-        self.logging_type = 'stream'
-
-        self.drivers = []
-
-        self.output_data = []
 
         self.NOT_FOUND_MSG = "From {}: could not find {}"
 
@@ -119,7 +104,7 @@ class ICORATING(ScraperBase):
                            'MEDIUM': DataKeys.MEDIUM_URL, 'INSTAGRAM': DataKeys.INSTAGRAM_URL,
                            'TELEGRAM': DataKeys.TELEGRAM_URL, 'REDDIT': DataKeys.REDDIT_URL,
                            'BTCTALK': DataKeys.BITCOINTALK_URL,
-                           'WEBSITE': DataKeys.ICOWEBSITE, 'LINKEDIN': DataKeys.LINKEDIN_URL,
+                           'WEBSITE': DataKeys.WEBSITE, 'LINKEDIN': DataKeys.LINKEDIN_URL,
                            'TWITTER': DataKeys.TWITTER_URL}
             for link_tag in link_tags:
                 try:
