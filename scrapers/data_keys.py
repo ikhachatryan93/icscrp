@@ -63,6 +63,7 @@ class DataKeys:
     WEBSITE = 'webpage'
     LOGO_URL = 'logo_url'
     SLACK_URL = 'slack_url'
+    YOUTUBE_URL = 'youtube_url'
 
     # bitcointalk
     BITCOINTALK_URL = 'btc_page'
