@@ -5,6 +5,10 @@ import platform
 import sys
 import json
 from urllib.parse import urlsplit
+import requests
+import urllib3
+from urllib3 import ProxyManager
+import bs4
 
 from configobj import ConfigObj, flatten_errors
 from openpyxl import Workbook
@@ -16,14 +20,15 @@ from validate import VdtValueError
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "drivers"))
-
-import bs4
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+user_agent = {'user-agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
 
 
 class Configs:
     spec = '''[scraper]
-    threads = integer(min=1, max=30, default=1)
-    browsers = integer(min=1, max=30, default=1)
+    threads = integer(min=1, max=50, default=1)
+    browsers = integer(min=1, max=50, default=1)
+    max_items = integer(min=-1, max=5000, default=50)
     driver = options('firefox', 'chrome', 'phantomjs', default='firefox')
     scraper_engine = options('bs4', 'selenium', default='selenium')
     html_parser = options('html5lib', 'lxml', 'html.parser', default='html5lib')
@@ -66,6 +71,7 @@ class Configs:
         Configs.config['output_format'] = config_parser['scraper']['output_format']
         Configs.config['max_threads'] = int(config_parser['scraper']['threads'])
         Configs.config['max_browsers'] = int(config_parser['scraper']['browsers'])
+        Configs.config['max_items'] = int(config_parser['scraper']['max_items'])
 
         Configs.parsed = True
 
@@ -250,16 +256,31 @@ def load_page_with_selenium(url, parser):
     return bs4.BeautifulSoup(driver.page_source, parser)
 
 
-import urllib3
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-user_agent = {'user-agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
-
-
 def load_page(url, parser):
     http = urllib3.PoolManager(1, headers=user_agent, timeout=10)
     r = http.request('GET', url)
     return bs4.BeautifulSoup(r.data.decode('utf-8'), parser)
+
+
+def load_page1(url, parser):
+    http = urllib3.PoolManager(1, headers=user_agent, timeout=10)
+    r = http.request('GET', url)
+    return bs4.BeautifulSoup(r.data, parser)
+
+
+def load_page_via_proxies(url, parser, proxy):
+    proxyDict = {
+        "http": proxy.strip(),
+    }
+    print('request {}'.format(proxy))
+    if proxy != '':
+        r = requests.get(url, headers=user_agent, proxies=proxyDict, timeout=10)
+        print('requested')
+        return bs4.BeautifulSoup(r.text, parser)
+
+    r = requests.get(url, timeout=10)
+    print('requested')
+    return bs4.BeautifulSoup(r.text, parser)
 
 
 def move_to_element(driver, element):

@@ -54,7 +54,6 @@ class DataKeys:
     # social pages
     GITHUB_URL = 'github_page'
     TELEGRAM_URL = 'telegram_page'
-    BITCOINTALK_URL = 'bitcointalk_page'
     MEDIUM_URL = 'medium_page'
     LINKEDIN_URL = 'linkedin_page'
     TWITTER_URL = 'twitter_page'
@@ -64,6 +63,11 @@ class DataKeys:
     WEBSITE = 'webpage'
     LOGO_URL = 'logo_url'
     SLACK_URL = 'slack_url'
+
+    # bitcointalk
+    BITCOINTALK_URL = 'btc_page'
+    BITCOINTALK_AVERAGE_ACTIVITY = 'btc_avg_activ'
+    BITCOINTALK_TOTAL_COMMENTS = 'btc_num_comments'
 
     # scores
     OVERALL_SCORES = 'website_overall_rating'

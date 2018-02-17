@@ -3,6 +3,7 @@ from multiprocessing.pool import ThreadPool
 
 import tqdm
 from utilities.utils import setup_browser
+from utilities.utils import Configs
 
 
 # Abstract class
@@ -63,5 +64,9 @@ class ScraperBase:
         for url in self.urls:
             self.logger.info('Scraping data from {}'.format(url))
             listings += (self.scrape_listings(url))
+
+        # for debugging
+        if Configs.get('max_items') != 0:
+            return [data for data in self.scrape_profiles(listings[:Configs.get('max_items')]) if data is not None]
 
         return [data for data in self.scrape_profiles(listings) if data is not None]
