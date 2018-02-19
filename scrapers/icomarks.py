@@ -17,17 +17,17 @@ from utilities.utils import setup_browser
 from urllib.request import urljoin
 
 
-class IcoStats(ScraperBase):
+class IcoMarks(ScraperBase):
     def __init__(self, logger, max_threads=1, max_browsers=0):
 
-        super(IcoStats, self).__init__(logger, max_threads, max_browsers)
+        super(IcoMarks, self).__init__(logger, max_threads, max_browsers)
 
         # should be 'selenium' or 'bs4'
         # TODO: add scrapy support
         self.engine = 'bs4'
 
         # should be 'firefox', 'chrome' or 'phantomjs'(headless)
-        self.browser_name = 'phantomjs'
+        self.browser_name = 'firefox'
 
         # should be 'html5lib', 'lxml' or 'html.parser'
         self.html_parser = 'lxml'

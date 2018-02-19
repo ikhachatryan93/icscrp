@@ -14,7 +14,7 @@ from scrapers.icobench import IcoBench
 from scrapers.icobazaar import IcoBazaar
 from scrapers.icodrops import IcoDrops
 from scrapers.tokentops import TokenTops
-from scrapers.icostats import IcoStats
+from scrapers.icomarks import IcoMarks
 from scrapers.telegram import Telegram
 from scrapers.bitcointalk import BitcoinTalk
 
@@ -40,19 +40,19 @@ def main():
     logger = configure_logging(Configs.get('logging_handler'))
     parse_arguments()
 
-    # try:
-    #     scraper = IcoStats(logger, Configs.get('max_threads'))
-    #     data = scraper.scrape_website()
-    #     scraper = BitcoinTalk(logger, 20)
-    #     scraper.extract_bitcointalk(data)
-    #     write_to_csv("icostats.csv", data)
-    # except:
-    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    try:
+        scraper = IcoMarks(logger, Configs.get('max_threads'))
+        data = scraper.scrape_website()
+        scraper = BitcoinTalk(logger)
+        scraper.extract_bitcointalk(data)
+        write_to_csv("icomarks.csv", data)
+    except:
+        logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
     # try:
-    #     scraper = IcoStats(logger, Configs.get('max_threads'))
+    #     scraper = IcoMarks(logger, Configs.get('max_threads'))
     #     data = scraper.scrape_website()
-    #     write_to_csv("icostats.csv", data)
+    #     write_to_csv("icomarks.csv", data)
     # except:
     #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
@@ -71,13 +71,13 @@ def main():
     #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
     #
 
-    try:
-        scraper = IcoBazaar(logger, Configs.get('max_threads'))
-        data = scraper.scrape_website()
-        write_to_csv("icobazaar.csv", data)
-        # write_to_excel('icobazaar.xlsx',dict_list=data)
-    except:
-        logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    # try:
+    #     scraper = IcoBazaar(logger, Configs.get('max_threads'))
+    #     data = scraper.scrape_website()
+    #     write_to_csv("icobazaar.csv", data)
+    #     # write_to_excel('icobazaar.xlsx',dict_list=data)
+    # except:
+    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
     #
     # try:
     #     scraper = IcoDrops(logger, Configs.get('max_threads'))
@@ -106,7 +106,6 @@ def main():
     #     write_to_excel('trackico.xls', dict_list=data)
     # except:
     #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
-
 
     # final_data = None
     # try:

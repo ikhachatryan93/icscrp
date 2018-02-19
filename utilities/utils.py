@@ -9,6 +9,7 @@ import requests
 import urllib3
 from urllib3 import ProxyManager
 import bs4
+import fake_useragent
 
 from configobj import ConfigObj, flatten_errors
 from openpyxl import Workbook
@@ -22,6 +23,59 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "drivers"))
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 user_agent = {'user-agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
+
+from urllib.request import Request, urlopen
+from bs4 import BeautifulSoup
+from fake_useragent import UserAgent
+import random
+
+ua = UserAgent()  # From here we generate a random user agent
+proxies = []  # Will contain proxies [ip, port]
+
+
+def generate_proxies():
+    # Retrieve latest proxies
+    proxies_req = Request('https://www.sslproxies.org/')
+    proxies_req.add_header('User-Agent', ua.random)
+    proxies_doc = urlopen(proxies_req).read().decode('utf8')
+
+    soup = BeautifulSoup(proxies_doc, 'html.parser')
+    proxies_table = soup.find(id='proxylisttable')
+
+    # Save proxies in the array
+    for row in proxies_table.tbody.find_all('tr'):
+        proxies.append({
+            'ip': row.find_all('td')[0].string,
+            'port': row.find_all('td')[1].string
+        })
+
+    # Choose a random proxy
+    proxy_index = random_proxy()
+    proxy = proxies[proxy_index]
+
+    for n in range(1, 100):
+        req = Request('http://icanhazip.com')
+        req.set_proxy(proxy['ip'] + ':' + proxy['port'], 'http')
+
+        # Every 10 requests, generate a new proxy
+        if n % 10 == 0:
+            proxy_index = random_proxy()
+            proxy = proxies[proxy_index]
+
+        # Make the call
+        try:
+            my_ip = urlopen(req).read().decode('utf8')
+            print('#' + str(n) + ': ' + my_ip)
+        except:  # If error, delete this proxy and find another one
+            del proxies[proxy_index]
+            print('Proxy ' + proxy['ip'] + ':' + proxy['port'] + ' deleted.')
+            proxy_index = random_proxy()
+            proxy = proxies[proxy_index]
+
+
+# Retrieve a random index proxy (we need the index to delete it if not working)
+def random_proxy():
+    return random.randint(0, len(proxies) - 1)
 
 
 class Configs:
@@ -253,7 +307,15 @@ def write_lines_to_file(name, urls):
 def load_page_with_selenium(url, parser):
     driver = setup_browser('firefox')
     driver.get(url)
-    return bs4.BeautifulSoup(driver.page_source, parser)
+    bs = bs4.BeautifulSoup(driver.page_source, parser)
+    driver.close()
+    return bs
+
+
+def load_page2(url, parser):
+    http = urllib3.PoolManager(1, headers=user_agent, timeout=10)
+    r = http.request('GET', url)
+    return bs4.BeautifulSoup(r.data.decode('latin1'), parser)
 
 
 def load_page(url, parser):
@@ -268,13 +330,33 @@ def load_page1(url, parser):
     return bs4.BeautifulSoup(r.data, parser)
 
 
+def load_page_as_text(url):
+    agent = {'user-agent': fake_useragent.UserAgent().random}
+    http = urllib3.PoolManager(1, headers=agent, timeout=10)
+    r = http.request('GET', url)
+    return r.data.decode('latin1')
+
+
+def load_page_via_proxies_as_text(url, proxy):
+    agent = {'user-agent': fake_useragent.UserAgent().random}
+    proxyDict = {
+        "http": proxy.strip(),
+    }
+    if proxy != '':
+        r = requests.get(url, headers=agent, proxies=proxyDict, timeout=10)
+        return r.text
+
+    r = requests.get(url, headers=agent, timeout=10)
+    return r.text
+
+
 def load_page_via_proxies(url, parser, proxy):
     proxyDict = {
         "http": proxy.strip(),
     }
     print('request {}'.format(proxy))
     if proxy != '':
-        r = requests.get(url, headers=user_agent, proxies=proxyDict, timeout=10)
+        r = requests.get(url, headers=fake_useragent.UserAgent(), proxies=proxyDict, timeout=10)
         print('requested')
         return bs4.BeautifulSoup(r.text, parser)
 

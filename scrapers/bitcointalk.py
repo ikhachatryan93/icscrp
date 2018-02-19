@@ -1,36 +1,31 @@
+import re
 from multiprocessing.dummy import Lock
 from multiprocessing.pool import ThreadPool
 
 import tqdm
-import re
+import time
+import random
 
-from utilities.utils import load_page
-from utilities.utils import load_page1
-from scrapers.base_scraper import ScraperBase
-from scrapers.data_keys import DataKeys
 from scrapers.data_keys import BOOL_VALUES
-
-telegram_urls = ['https://bitcointalk.org/index.php?topic=2135474.0',
-                 'https://bitcointalk.org/index.php?topic=2418198',
-                 'https://bitcointalk.org/index.php?topic=2393979.new#new',
-                 'https://bitcointalk.org/index.php?topic=2450026',
-                 'https://bitcointalk.org/index.php?topic=2769614.0',
-                 'https://bitcointalk.org/index.php?topic=2273820',
-                 'https://bitcointalk.org/index.php?topic=2291309.0',
-                 'https://bitcointalk.org/index.php?topic=2526681',
-                 'https://bitcointalk.org/index.php?topic=2286042',
-                 'https://bitcointalk.org/index.php?topic=2383397.0',
-                 'https://bitcointalk.org/index.php?topic=2434698.0',
-                 'https://bitcointalk.org/index.php?topic=2337020.0',
-                 'https://bitcointalk.org/index.php?topic=2347477.0']
+from scrapers.data_keys import DataKeys
+from utilities.utils import load_page1
+from utilities.utils import load_page_with_selenium
+from utilities.utils import load_page_as_text
+from utilities.utils import setup_browser
+from utilities.utils import load_page_via_proxies_as_text
+from utilities.proxy_generator import get_new_proxies
+from utilities.utils import generate_proxies
+from utilities.utils import random_proxy
 
 
 class BitcoinTalk:
-    def __init__(self, logger, max_threads=1):
-        self.html_parser = 'lxml'
-        self.max_threads = max_threads
+    def __init__(self, logger):
+        self.html_parser = 'html5lib'
+        self.max_threads = 1
         self.mutex = Lock()
+        self.driver = setup_browser('phantomjs')
         self.logger = logger
+        generate_proxies()
 
     def scrape_listings(self, url):
         try:
@@ -38,43 +33,53 @@ class BitcoinTalk:
         except:
             self.logger.warning('Could not load bitcointalk page')
             return
+        try:
+            url_sample = re.match('.*topic=\d*', url).group(0)
+        except:
+            self.logger.warning('Found unknown bitcoinalk referance')
+            return
 
         urls = [url]
-        try:
-            pagins = bs.findAll('a', {'class': 'navPages'})
-            for p in pagins:
-                try:
-                    urls.append(p['href'])
-                except:
-                    self.logger.warning('Unkown error in bitcointalk')
-        except:
-            self.logger.warning('Could not find subscribers number')
+        pagins = bs.findAll('a', {'class': 'navPages'})
+        for p in pagins:
+            if p.has_attr('href'):
+                url = re.match('.*topic=\d*(.\d+)?', p['href']).group(0)
+                urls.append(url)
 
-        return set(urls)
+        last_pagin_num = 0
+        for url in urls:
+            try:
+                n = int(url.split('.')[-1])
+            except ValueError:
+                continue
+
+            if n > last_pagin_num:
+                last_pagin_num = n
+
+        i = 0
+        urls_ = []
+        while i != last_pagin_num + 20:
+            urls_.append('{}.{}'.format(url_sample, str(i)))
+            i += 20
+
+        return random.sample(urls_, len(urls_))
 
     def scrape_profile(self, url):
         try:
-            bs = load_page1(url, self.html_parser)
+            # bs = load_page_as_text(url)
+            bs = load_page_via_proxies_as_text(url, random_proxy())
         except:
             self.logger.error('Could not get commnets from {}'.format(url))
             return
 
-        poster_infos = bs.findAll('td', {'class': 'poster_info'})
-        total_activity = 0
-        total_comments = 0
-        for info in poster_infos:
-            try:
-                activity = int(info.find(string=re.compile('Activity:\s*\d+')).split(':')[1].strip())
-                total_activity += activity
-                total_comments += 1
-            except:
-                pass
-                # self.logger.warning('Could not find activity score from {}'.format(url))
-
-        if total_activity == 0:
-            return -1, -1
-
-        assert total_comments != 0
+        activities = re.findall('Activity:\s*\d+', bs)
+        if activities:
+            total_activity = sum(int(act.split(':')[1]) for act in activities)
+            total_comments = len(activities)
+        else:
+            self.logger.critical('Bot detection reject in {}'.format(url))
+            time.sleep(2)
+            return self.scrape_profile(url)
 
         return total_activity // total_comments, total_comments
 
@@ -84,6 +89,8 @@ class BitcoinTalk:
                 self.logger.info('Obtainging bitcointalk information for {} ico'.format(d['name']))
 
                 btc_pages = self.scrape_listings(d[DataKeys.BITCOINTALK_URL])
+                if not btc_pages:
+                    continue
 
                 pool = ThreadPool(self.max_threads)
                 btc_comments = list(tqdm.tqdm(pool.imap(self.scrape_profile, btc_pages), total=len(btc_pages)))
