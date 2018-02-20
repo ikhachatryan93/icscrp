@@ -58,7 +58,6 @@ class DataKeys:
     LINKEDIN_URL = 'linkedin_page'
     TWITTER_URL = 'twitter_page'
     INSTAGRAM_URL = 'instagram_url'
-    REDDIT_URL = 'reddit_page'
     FACEBOOK_URL = 'facebook_page'
     WEBSITE = 'webpage'
     LOGO_URL = 'logo_url'
@@ -69,6 +68,13 @@ class DataKeys:
     BITCOINTALK_URL = 'btc_page'
     BITCOINTALK_AVERAGE_ACTIVITY = 'btc_avg_activ'
     BITCOINTALK_TOTAL_COMMENTS = 'btc_num_comments'
+
+    # reddit
+    REDDIT_URL = 'reddit_page'
+    REDDIT_COMMENTS_COUNT = 'rdt_comment_count'
+    REDDIT_POSTS_COUNT = 'rdt_post_count'
+    REDDIT_AVG_KARMA = 'rdt_usr_avg_karma'
+
 
     # scores
     OVERALL_SCORES = 'website_overall_rating'
