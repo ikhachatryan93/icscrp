@@ -20,6 +20,9 @@ from scrapers.data_keys import DataKeys
 class Reddit:
     def __init__(self):
         self.html_parser = 'html5lib'
+        self.max_threads = 5
+        self.mutex = Lock()
+        self.logger = logger
 
     def scrape_listings(self, url):
 
@@ -36,7 +39,7 @@ class Reddit:
                     posts = bs.find_all('div', {'class': 'top-matter'})
                     post_count += len(posts)
                     for post in posts:
-                        comment = re('\d+', post.find('li', {'class': 'first'}).find('a').text)
+                        comment = re.findall('\d+', post.find('li', {'class': 'first'}).find('a').text)
                         if len(comment) > 0:
                             comment_count += int(comment[0])
                         user_name = post.find('p', {'class': 'tagline'}).find('a').text
@@ -48,7 +51,7 @@ class Reddit:
                     except AttributeError:
                         next_page_url = 0
                 except (AttributeError, TypeError):
-                    print('Unable to scrap profile')
+                    self.logger.error('Unable to scrap profile for {}'.format(url))
             else:
                 next_page_url = 0
 
@@ -56,22 +59,19 @@ class Reddit:
 
     def scrap_users(self, users):
 
-        avg_karma = 0
         sum_karma = 0
         for user_name in users:
             user_redit_url = 'https://www.reddit.com/user/' + user_name
             try:
                 bs = load_page(user_redit_url, self.html_parser)
                 try:
-                    post_karma = int(re.sub('[^\w]', '', bs.find('div', {'class': 'titlebox'}).find('span', {
-                        'class': 'karma'}).text))
+                    post_karma = int(re.sub('[^\w]', '', bs.find('div', {'class': 'titlebox'}).find('span', {'class': 'karma'}).text))
                     sum_karma += post_karma
                 except:
-                    try: post_karma = int(
-                        bs.find('div', {'class': 'ProfileSidebar__counterInfo'}).text.split("Post Karma")[0].strip())
+                    try: post_karma = int(bs.find('div', {'class': 'ProfileSidebar__counterInfo'}).text.split("Post Karma")[0].strip())
                     sum_karma += post_karma
-                except AttributeError:
-                    print("aaaaaaaaaaaaa")
+                    except AttributeError:
+                        self.logger.error("Unable to get user post karma info for user [{}]".format(user_name))
 
         # TODO ------------------round to nearest
         return (sum_karma / len(users))
@@ -81,9 +81,13 @@ class Reddit:
 
         for d in data:
             if d[DataKeys.REDDIT_URL] != BOOL_VALUES.NOT_AVAILABLE:
-                # self.logger.info('Obtainging reddit information for {} ico'.format(d['name']))
+                self.logger.info('Obtainging reddit information for {} ico'.format(d['name']))
 
-                post_count, comment_count, user_list = scrape_listings(d[DataKeys.REDDIT_URL])
+                pool = ThreadPool(self.max_threads)
+                post_count, comment_count, users = list(tqdm.tqdm(pool.imap(self.scrape_listings, d[DataKeys.REDDIT_URL]), total=1))
+                #post_count, comment_count, users = scrape_listings(d[DataKeys.REDDIT_URL])
+                pool.close()
+                pool.join()
 
                 d[DataKeys.REDDIT_COMMENTS_COUNT] = comment_count
                 d[DataKeys.REDDIT_POSTS_COUNT] = post_count
