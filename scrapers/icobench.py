@@ -1,16 +1,16 @@
 import re
 import sys
-import tqdm
-
+import traceback
 from multiprocessing.pool import ThreadPool
 from urllib.request import URLError
 from urllib.request import urljoin
 
-from utilities.utils import load_page
+import tqdm
 
-from scrapers.data_keys import DataKeys
-from scrapers.data_keys import BOOL_VALUES
 from scrapers.base_scraper import ScraperBase
+from scrapers.data_keys import BOOL_VALUES
+from scrapers.data_keys import DataKeys
+from utilities.utils import load_page
 
 
 class IcoBench(ScraperBase):
@@ -41,7 +41,7 @@ class IcoBench(ScraperBase):
         try:
             bs = load_page(url.split('&')[0], self.html_parser)
         except:
-            self.logger.error('Error while scraping listings from %s', url)
+            print(traceback.format_exc())
             return
 
         listings_tags = bs.find_all('a', {'class': 'image'}, href=True)
@@ -97,6 +97,9 @@ class IcoBench(ScraperBase):
         except URLError:
             self.logger.critical('Timeout error while scraping listings from %s', url)
             return
+        except:
+            self.logger.error(traceback.format_exc())
+            return
 
         paging = bs.find('a', {'class': 'next'}, href=True)
         max_url_id = None
@@ -127,6 +130,7 @@ class IcoBench(ScraperBase):
         try:
             bs = load_page(url, self.html_parser)
         except:
+            print(traceback.format_exc())
             self.logger.error('Error while scraping profile {}'.format(url))
             return
 
@@ -137,8 +141,6 @@ class IcoBench(ScraperBase):
             data[DataKeys.DESCRIPTION] = name_and_description[1].text.strip()
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Name and/or Description'))
-            data[DataKeys.NAME] = BOOL_VALUES.NOT_AVAILABLE
-            data[DataKeys.DESCRIPTION] = BOOL_VALUES.NOT_AVAILABLE
 
         ######################### Score Fileds #########################
         score_divs = bs.find('div', {'class': 'rating'}).find('div', {'class': 'distribution'}).findAll('div')
@@ -148,12 +150,13 @@ class IcoBench(ScraperBase):
                         'VISION': DataKeys.VISION_SCORE,
                         'TEAM': DataKeys.TEAM_SCORE,
                         'PRODUCT': DataKeys.PRODUCT_SCORE}
+
         for div in score_divs:
             label = str(div.find('label').text).strip()
             key = data_mapping.get(label.upper())
             try:
                 data[key] = str(div.contents[0]).strip()
-            except:
+            except int:
                 data[key] = BOOL_VALUES.NOT_AVAILABLE
 
         rate_div = bs.find('div', {'itemprop': 'ratingValue'})

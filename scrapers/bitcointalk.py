@@ -1,35 +1,34 @@
 import re
-from multiprocessing.dummy import Lock
-from multiprocessing.pool import ThreadPool
-
 import tqdm
 import time
 import random
+import traceback
+
+from multiprocessing.dummy import Lock
+from multiprocessing.pool import ThreadPool
 
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
-from utilities.utils import load_page1
-from utilities.utils import load_page_with_selenium
+from utilities.utils import load_page
+from utilities.utils import load_page_via_proxies_as_text
 from utilities.utils import load_page_as_text
 from utilities.utils import setup_browser
-from utilities.utils import load_page_via_proxies_as_text
 from utilities.proxy_generator import get_new_proxies
-from utilities.utils import generate_proxies
-from utilities.utils import random_proxy
 
 
 class BitcoinTalk:
     def __init__(self, logger):
         self.html_parser = 'html5lib'
-        self.max_threads = 1
+        self.max_threads = 5
         self.mutex = Lock()
         self.driver = setup_browser('phantomjs')
         self.logger = logger
-        generate_proxies()
+        # self.proxies = get_new_proxies('https')
+        self.proxies = ['107.150.212.46:28239:segkhachat:so8oep', 'local']
 
     def scrape_listings(self, url):
         try:
-            bs = load_page1(url, self.html_parser)
+            bs = load_page(url, self.html_parser)
         except:
             self.logger.warning('Could not load bitcointalk page')
             return
@@ -66,11 +65,12 @@ class BitcoinTalk:
 
     def scrape_profile(self, url):
         try:
-            # bs = load_page_as_text(url)
-            bs = load_page_via_proxies_as_text(url, random_proxy())
+            #bs = load_page_as_text(url)
+            bs = load_page_via_proxies_as_text(url, random.choice(self.proxies))
+            #bs = load_page_via_proxies_as_text(url, random.choice(self.proxies))
         except:
-            self.logger.error('Could not get commnets from {}'.format(url))
-            return
+            print(traceback.format_exc())
+            return -1, -1
 
         activities = re.findall('Activity:\s*\d+', bs)
         if activities:
@@ -78,7 +78,7 @@ class BitcoinTalk:
             total_comments = len(activities)
         else:
             self.logger.critical('Bot detection reject in {}'.format(url))
-            time.sleep(2)
+            time.sleep(20)
             return self.scrape_profile(url)
 
         return total_activity // total_comments, total_comments
@@ -100,6 +100,10 @@ class BitcoinTalk:
                 total_comments = 0
                 total_activity = 0
                 pagins = 0
+
+                if not btc_comments:
+                    continue
+
                 for activity, comments in btc_comments:
                     if activity == -1:
                         continue

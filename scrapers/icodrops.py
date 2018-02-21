@@ -1,13 +1,10 @@
 import re
+import traceback
 from urllib.request import urljoin
 
-from bs4 import NavigableString
-
-from scrapers.data_keys import BOOL_VALUES
-from scrapers.data_keys import DataKeys
 from scrapers.base_scraper import ScraperBase
+from scrapers.data_keys import DataKeys
 from utilities.utils import load_page
-from utilities.utils import load_page_with_selenium
 
 
 class IcoDrops(ScraperBase):
@@ -15,19 +12,8 @@ class IcoDrops(ScraperBase):
 
         super(IcoDrops, self).__init__(logger, max_threads, max_browsers)
 
-        self.max = 1
-        # should be 'selenium' or 'bs4'
-        # TODO: add scrapy support
-        self.engine = 'bs4'
-
-        # should be 'firefox', 'chrome' or 'phantomjs'(headless)
-        self.browser_name = None
-
         # should be 'html5lib', 'lxml' or 'html.parser'
         self.html_parser = 'lxml'
-
-        # should be 'file' or 'stream'
-        self.logging_type = 'stream'
 
         self.drivers = []
 
@@ -44,7 +30,7 @@ class IcoDrops(ScraperBase):
         try:
             bs = load_page(url, self.html_parser)
         except:
-            self.logger.critical('Error while scraping listings from %s', url)
+            print(traceback.format_exc())
             return
 
         urls = []
@@ -65,29 +51,41 @@ class IcoDrops(ScraperBase):
         try:
             bs = load_page(url, self.html_parser)
         except:
-            self.logger.error('Could not scrape profile {}'.format(url))
+            print(traceback.format_exc())
             return
-        self.logger.error('Could not scrape profile {}'.format(url))
 
         # name
         try:
             text = bs.find('div', {'class': 'ico-main-info'}).find('h3').text
             # from "ICO NAME (ICN)" to "ICO NAME"
             data[DataKeys.NAME] = text.strip()
-        except:
+        except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO name'))
+
+        # whitepaper
+        try:
+            data[DataKeys.NAME] = bs.find('div', {'class': 'button'}, text='WHITEPAPER').parent['href']
+        except AttributeError:
+            self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO whitepaper'))
+
+        # website url
+        try:
+            data[DataKeys.NAME] = bs.find('div', {'class': 'button'}, text='WEBSITE').parent['href']
+        except AttributeError:
+            self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO website'))
 
         # description
         try:
             data[DataKeys.DESCRIPTION] = bs.find('div', {'class': 'ico-description'}).text.strip()
-        except:
+        except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'description'))
 
         # icon
         try:
-            data[DataKeys.LOGO_URL] = bs.find('div', {'class': 'ico-icon'}).find('img')['src']
-        except:
-            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'logo url'))
+            url_ = bs.find('div', {'class': 'ico-icon'}).find('img')['src']
+            data[DataKeys.LOGO_URL] = urljoin(self.domain, url_)
+        except AttributeError:
+            self.logger.error(self.NOT_FOUND_MSG.format(url, 'logo url'))
 
         # soc links
         try:
@@ -103,7 +101,15 @@ class IcoDrops(ScraperBase):
                     data[DataKeys.MEDIUM_URL] = soc['href']
                 if soc.find('i', {'class': 'fa-twitter'}):
                     data[DataKeys.TWITTER_URL] = soc['href']
-        except:
+                if soc.find('i', {'class': 'fa-github'}):
+                    data[DataKeys.GITHUB_URL] = soc['href']
+                if soc.find('i', {'class': 'fa-btc'}):
+                    data[DataKeys.BITCOINTALK_URL] = soc['href']
+                if soc.find('i', {'class': 'fa-reddit-alien'}):
+                    data[DataKeys.REDDIT_URL] = soc['href']
+                if soc.find('i', {'class': 'fa-youtube'}):
+                    data[DataKeys.YOUTUBE_URL] = soc['href']
+        except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'soc_links'))
 
         try:
@@ -111,41 +117,45 @@ class IcoDrops(ScraperBase):
             score_map = {'HYPE RATE': DataKeys.HYPE_SCORE,
                          'RISK RATE': DataKeys.RISK_SCORE,
                          'ROI RATE': DataKeys.ROI_SCORE,
-                         'ICO DR': DataKeys.OVERALL_SCORES}
+                         'ICO DRPS SCORE': DataKeys.OVERALL_SCORES}
 
             for rating in rating_fields:
                 hh = rating.findAll('p')
                 if len(hh) == 2:
                     key = hh[0].text.strip().split('\n')[0].upper()
                     if key in score_map:
-                        data[key] = hh[1].text.strip()
-        except:
-            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'rating'))
+                        data[score_map[key]] = hh[1].text.strip()
+        except (AttributeError, TypeError):
+            self.logger.info(self.NOT_FOUND_MSG.format(url, 'rating'))
 
         # date
-        try:
-            date_text = bs.find('h4', text=re.compile('Token Sale:*')).text
-            dates = date_text.strip().replace('Token Sale:', '').strip().split('–')
+        date = bs.find('h4', text=re.compile('Token Sale:*'))
+        if date:
+            dates = date.text.replace('Token Sale:', '').strip().split('–')
             if len(dates) == 2:
-                data[DataKeys.ICO_START] = dates[0]
-                data[DataKeys.ICO_END] = dates[1]
-        except:
-            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Token date'))
+                data[DataKeys.ICO_START] = dates[0].strip()
+                data[DataKeys.ICO_END] = dates[1].strip()
+            else:
+                self.logger.info(self.NOT_FOUND_MSG.format(url, 'Token date'))
+        else:
+            self.logger.info(self.NOT_FOUND_MSG.format(url, 'Token date'))
 
         # info
         try:
+            info_map = {'TICKER:': DataKeys.TOKEN_NAME, 'TOKEN TYPE:': DataKeys.TOKEN_STANDARD,
+                        'ICO TOKEN PRICE:': DataKeys.ICO_PRICE, 'FUNDRAISING GOAL:': DataKeys.SOFT_CAP,
+                        'WHITELIST:': DataKeys.WHITELIST, 'KNOW YOUR CUSTOMER (KYC):': DataKeys.KYC,
+                        'ACCEPTS:': DataKeys.ACCEPTED_CURRENCIES}
+
             infos = bs.findAll('span', {'class': 'grey'}, text=True)
             for info in infos:
-                map = {'Ticker:': DataKeys.TOKEN_NAME, }
-                if 'Ticker:' in info.text:
+                key = info.text.upper().strip()
+                if key in info_map:
                     try:
-                        data[DataKeys.TOKEN_NAME] = info.parent.text.split(':')[1].strip()
-                    except:
+                        data[info_map[key]] = info.parent.text.split(':')[1].strip()
+                    except AttributeError:
                         self.logger.error('Could not find existing info')
-            pass
-        except:
-            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'info'))
+        except (TypeError, AttributeError):
+            self.logger.info(self.NOT_FOUND_MSG.format(url, 'info'))
 
         return data
-
-

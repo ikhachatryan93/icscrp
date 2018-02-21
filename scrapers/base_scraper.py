@@ -1,9 +1,10 @@
+from datetime import datetime
 from multiprocessing import Lock
 from multiprocessing.pool import ThreadPool
-
-import tqdm
 from utilities.utils import setup_browser
 from utilities.utils import Configs
+
+import tqdm
 
 
 # Abstract class
@@ -46,6 +47,20 @@ class ScraperBase:
     def scrape_profile(self, url):
         raise NotImplementedError('scrap_profile not implemented yet')
 
+    def process_date_type1(self, data, key):
+        """
+
+        :param data:
+        :param key: %d.%m.%y format
+        :rtype: %d-%m-%y format
+        """
+        if key in data:
+            date = data[key]
+            try:
+                data[key] = datetime.strptime(date, '%d.%m.%y').strftime('%d-%m-%Y')
+            except ValueError:
+                self.logger.warning('Could not format date from {}'.format(DataKeys.PROFILE_URL))
+
     def scrape_profiles(self, pages):
         if self.engine == 'selenium':
             self.initialize_browsers()
@@ -65,8 +80,8 @@ class ScraperBase:
             self.logger.info('Scraping data from {}'.format(url))
             listings += (self.scrape_listings(url))
 
-        # for debugging
-        if Configs.get('max_items') != 0:
+        # debugging
+        if Configs.get('max_items') != -1:
             return [data for data in self.scrape_profiles(listings[:Configs.get('max_items')]) if data is not None]
 
         return [data for data in self.scrape_profiles(listings) if data is not None]

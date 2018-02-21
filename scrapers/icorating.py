@@ -1,5 +1,6 @@
 import re
 from urllib.request import urljoin
+from datetime import datetime
 
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
@@ -156,4 +157,12 @@ class IcoRating(ScraperBase):
         except:
             self.logger.error(self.NOT_FOUND_MSG.format(url + '/details', 'info table'))
 
+        self.process(data)
+
         return data
+
+    def process(self, data):
+        self.process_date_type1(data, DataKeys.ICO_START)
+        self.process_date_type1(data, DataKeys.ICO_END)
+        self.process_date_type1(data, DataKeys.PRE_ICO_START)
+        self.process_date_type1(data, DataKeys.PRE_ICO_END)

@@ -1,91 +1,33 @@
 import csv
-import logging
+import json
 import os
 import platform
 import sys
-import json
 from urllib.parse import urlsplit
-import requests
-import urllib3
-from urllib3 import ProxyManager
-import bs4
-import fake_useragent
 
+import bs4
+import urllib3
 from configobj import ConfigObj, flatten_errors
+from fake_useragent import UserAgent
 from openpyxl import Workbook
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
+from urllib3 import make_headers
 from validate import Validator
 from validate import VdtValueError
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "drivers"))
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-user_agent = {'user-agent': 'Mozilla/5.0 (Windows NT 6.3; rv:36.0) Gecko/20100101 Firefox/36.0'}
 
-from urllib.request import Request, urlopen
-from bs4 import BeautifulSoup
-from fake_useragent import UserAgent
-import random
-
+urllib3.disable_warnings()
 ua = UserAgent()  # From here we generate a random user agent
-proxies = []  # Will contain proxies [ip, port]
-
-
-def generate_proxies():
-    # Retrieve latest proxies
-    proxies_req = Request('https://www.sslproxies.org/')
-    proxies_req.add_header('User-Agent', ua.random)
-    proxies_doc = urlopen(proxies_req).read().decode('utf8')
-
-    soup = BeautifulSoup(proxies_doc, 'html.parser')
-    proxies_table = soup.find(id='proxylisttable')
-
-    # Save proxies in the array
-    for row in proxies_table.tbody.find_all('tr'):
-        proxies.append({
-            'ip': row.find_all('td')[0].string,
-            'port': row.find_all('td')[1].string
-        })
-
-    # Choose a random proxy
-    proxy_index = random_proxy()
-    proxy = proxies[proxy_index]
-
-    for n in range(1, 100):
-        req = Request('http://icanhazip.com')
-        req.set_proxy(proxy['ip'] + ':' + proxy['port'], 'http')
-
-        # Every 10 requests, generate a new proxy
-        if n % 10 == 0:
-            proxy_index = random_proxy()
-            proxy = proxies[proxy_index]
-
-        # Make the call
-        try:
-            my_ip = urlopen(req).read().decode('utf8')
-            print('#' + str(n) + ': ' + my_ip)
-        except:  # If error, delete this proxy and find another one
-            del proxies[proxy_index]
-            print('Proxy ' + proxy['ip'] + ':' + proxy['port'] + ' deleted.')
-            proxy_index = random_proxy()
-            proxy = proxies[proxy_index]
-
-
-# Retrieve a random index proxy (we need the index to delete it if not working)
-def random_proxy():
-    return random.randint(0, len(proxies) - 1)
 
 
 class Configs:
     spec = '''[scraper]
     threads = integer(min=1, max=50, default=1)
-    browsers = integer(min=1, max=50, default=1)
     max_items = integer(min=-1, max=5000, default=50)
-    driver = options('firefox', 'chrome', 'phantomjs', default='firefox')
-    scraper_engine = options('bs4', 'selenium', default='selenium')
-    html_parser = options('html5lib', 'lxml', 'html.parser', default='html5lib')
     logging_handler = options('stream', 'file', default='stream')
     output_format = options('excel', 'json', default='excel')
     '''
@@ -118,13 +60,9 @@ class Configs:
         config_parser = ConfigObj(Configs.file, configspec=Configs.spec.split('\n'), unrepr=True, interpolation=False)
         Configs.check_config_file(config_parser)
         # scraper configs
-        Configs.config['driver'] = config_parser['scraper']['driver']
-        Configs.config['scraper_engine'] = config_parser['scraper']['scraper_engine']
-        Configs.config['html_parser'] = config_parser['scraper']['html_parser']
         Configs.config['logging_handler'] = config_parser['scraper']['logging_handler']
         Configs.config['output_format'] = config_parser['scraper']['output_format']
         Configs.config['max_threads'] = int(config_parser['scraper']['threads'])
-        Configs.config['max_browsers'] = int(config_parser['scraper']['browsers'])
         Configs.config['max_items'] = int(config_parser['scraper']['max_items'])
 
         Configs.parsed = True
@@ -149,31 +87,6 @@ def get_domain(url):
     return domain
 
 
-# end of configs class
-def configure_logging(handler_type):
-    ####### disable root logger ########
-    hnd = logging.Handler()
-    logging.getLogger().addHandler(hnd)
-    ####################################
-
-    logger = logging.getLogger('Log')
-    if "file" in str(handler_type):
-        filename = dir_path + os.sep + "scraper.log"
-        os.remove(filename) if os.path.exists(filename) else None
-        handler = logging.FileHandler(filename=filename)
-    else:
-        handler = logging.StreamHandler()
-
-    logFormatter = logging.Formatter("%(filename)s:%(lineno)s %(asctime)s [%(levelname)-5.5s]  %(message)s")
-    handler.setLevel(logging.DEBUG)
-    handler.setFormatter(logFormatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False
-
-    return logger
-
-
 def setup_browser(browser=""):
     if browser == "":
         browser = Configs.get("driver")
@@ -192,7 +105,7 @@ def setup_browser(browser=""):
         driver = setup_firefox(bpath)
     else:
         driver = setup_chrome(bpath)
-        logging.warning("Invalid browser name specified, using default browser")
+        print("Invalid browser name specified, using default browser")
 
     return driver
 
@@ -247,16 +160,6 @@ def setup_phantomjs(bpath, maximize=True):
     return driver
 
 
-def write_output(file_name, data):
-    file_format = Configs.get("output_format")
-    if file_format == 'json':
-        write_json_file(file_name.rsplit(".", 1)[0] + ".json", data)
-    elif file_format == 'excel':
-        write_to_excel(file_name.rsplit(".", 1)[0] + ".xlsx", data)
-    else:
-        write_to_csv(file_name, data)
-
-
 def write_json_file(name, data):
     with open(name, 'w') as fname:
         json.dump(data, fname)
@@ -290,20 +193,6 @@ def write_to_csv(filename, toCSV):
         dict_writer.writerows(toCSV)
 
 
-def append_into_file(file, string):
-    with open(file, "a", encoding='utf-8') as myfile:
-        myfile.write(string + '\n')
-
-
-def write_lines_to_file(name, urls):
-    with open(name, 'w', encoding='utf-8') as f:
-        for url in urls:
-            try:
-                f.write(url + '\n')
-            except Exception as e:
-                print(str(e))
-
-
 def load_page_with_selenium(url, parser):
     driver = setup_browser('firefox')
     driver.get(url)
@@ -312,57 +201,69 @@ def load_page_with_selenium(url, parser):
     return bs
 
 
-def load_page2(url, parser):
-    http = urllib3.PoolManager(1, headers=user_agent, timeout=10)
-    r = http.request('GET', url)
-    return bs4.BeautifulSoup(r.data.decode('latin1'), parser)
+def load_page_as_text(url):
+    user_agent = {'user-agent': ua.random}
+    req = urllib3.PoolManager(10, headers=user_agent)
+
+    try:
+        html = req.urlopen('GET', url, timeout=10)
+    except urllib3.exceptions.MaxRetryError:
+        raise Exception('Timout error while requesting: {}'.format(url))
+
+    content_type = html.headers.get('Content-Type')
+    if not content_type:
+        print('Could not find encoding from {}, using default \'utf-8\' instead '.format(url))
+        encoding = 'utf-8'
+    else:
+        encoding = content_type.split('charset=')[-1]
+
+    try:
+        html_content = html.data.decode(encoding)
+    except LookupError:
+        html_content = html.data.decode('utf-8')
+
+    return html_content
 
 
 def load_page(url, parser):
-    http = urllib3.PoolManager(1, headers=user_agent, timeout=10)
-    r = http.request('GET', url)
-    return bs4.BeautifulSoup(r.data.decode('utf-8'), parser)
-
-
-def load_page1(url, parser):
-    http = urllib3.PoolManager(1, headers=user_agent, timeout=10)
-    r = http.request('GET', url)
-    return bs4.BeautifulSoup(r.data, parser)
-
-
-def load_page_as_text(url):
-    agent = {'user-agent': fake_useragent.UserAgent().random}
-    http = urllib3.PoolManager(1, headers=agent, timeout=10)
-    r = http.request('GET', url)
-    return r.data.decode('latin1')
+    html_content = load_page_as_text(url)
+    return bs4.BeautifulSoup(html_content, parser)
 
 
 def load_page_via_proxies_as_text(url, proxy):
-    agent = {'user-agent': fake_useragent.UserAgent().random}
-    proxyDict = {
-        "http": proxy.strip(),
-    }
-    if proxy != '':
-        r = requests.get(url, headers=agent, proxies=proxyDict, timeout=10)
-        return r.text
+    print(proxy + " -> " + url)
+    proxy_prop = proxy.split(':')
 
-    r = requests.get(url, headers=agent, timeout=10)
-    return r.text
+    if proxy == 'local':
+        print('switching to local')
+        return load_page_as_text(url)
+
+    header = make_headers(user_agent=ua.random, proxy_basic_auth=proxy_prop[2] + ':' + proxy_prop[3])
+    req = urllib3.ProxyManager('https://' + proxy_prop[0] + ':' + proxy_prop[1], headers=header)
+
+    try:
+        html = req.urlopen('GET', url, timeout=10)
+    except urllib3.exceptions.MaxRetryError:
+        raise Exception('Timout error while requesting: {}'.format(url))
+
+    content_type = html.headers.get('Content-Type')
+    if not content_type:
+        print('Could not find encoding from {}, using default \'utf-8\' instead '.format(url))
+        encoding = 'utf-8'
+    else:
+        encoding = content_type.split('charset=')[-1]
+
+    try:
+        html_content = html.data.decode(encoding)
+    except LookupError:
+        html_content = html.data.decode('utf-8')
+
+    return html_content
 
 
 def load_page_via_proxies(url, parser, proxy):
-    proxyDict = {
-        "http": proxy.strip(),
-    }
-    print('request {}'.format(proxy))
-    if proxy != '':
-        r = requests.get(url, headers=fake_useragent.UserAgent(), proxies=proxyDict, timeout=10)
-        print('requested')
-        return bs4.BeautifulSoup(r.text, parser)
-
-    r = requests.get(url, timeout=10)
-    print('requested')
-    return bs4.BeautifulSoup(r.text, parser)
+    html = load_page_via_proxies_as_text(url, proxy)
+    return bs4.BeautifulSoup(html, parser)
 
 
 def move_to_element(driver, element):

@@ -27,7 +27,7 @@ class IcoMarks(ScraperBase):
         self.engine = 'bs4'
 
         # should be 'firefox', 'chrome' or 'phantomjs'(headless)
-        self.browser_name = 'firefox'
+        self.browser_name = 'phantomjs'
 
         # should be 'html5lib', 'lxml' or 'html.parser'
         self.html_parser = 'lxml'

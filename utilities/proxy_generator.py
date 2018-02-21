@@ -4,6 +4,11 @@ import sys
 import time
 
 from utilities.utils import setup_browser
+from utilities.utils import load_page_via_proxies_as_text
+
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 main_url_socks5 = "https://incloak.com/proxy-list/?maxtime=1500&type=5&anon=4#list"
 main_url_socks4 = "https://incloak.com/proxy-list/?maxtime=1500&type=4&anon=4#list"
@@ -32,30 +37,34 @@ def request(driver, proxy_type):
 def get_new_proxies(proxy_type):
     print("Obtaining new proxies")
     driver = setup_browser('phantomjs')
-    #driver = setup_browser('firefox')
+    # driver = setup_browser('firefox')
     request(driver, proxy_type)
-    time.sleep(10)
-    proxy_table = driver.find_element_by_class_name("proxy__t").find_element_by_tag_name("tbody")
+    wait = WebDriverWait(driver, 15)
+    proxy_table = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "proxy__t"))).find_element_by_tag_name("tbody")
     proxy_lines = proxy_table.find_elements_by_tag_name("tr")
 
     proxies = []
-    with open('proxies.txt', 'w') as file_:
-        for line in proxy_lines:
-            try:
-                td_tags = line.find_elements_by_tag_name("td")
-                country = td_tags[2].text
-                if "United States" in country or 'Germany' in country:
-                    proxy = ("{}:{}\n".format(td_tags[0].text, td_tags[1].text))
-                    proxies.append(proxy)
-                    if proxy:
-                        file_.write(proxy)
-            except:
-                pass
+    for line in proxy_lines:
+        try:
+            td_tags = line.find_elements_by_tag_name("td")
+            proxy = ("{}:{}\n".format(td_tags[0].text, td_tags[1].text))
+            proxies.append(proxy.strip())
+        except:
+            pass
 
     driver.quit()
 
-    return proxies
+    working_proxies = []
+    with open('proxies.txt', 'w') as file_:
+        for prox in proxies:
+            try:
+                load_page_via_proxies_as_text('https://www.york.ac.uk/teaching/cws/wws/webpage1.html', prox)
+                print('Good proxy: {}'.format(prox))
+                working_proxies.append(prox)
+                file_.write(prox)
+            except:
+                print('Bad proxy: {}'.format(prox))
+                pass
 
+    return working_proxies
 
-# if __name__ == "__main__":
-#     get_new_proxies("https")

@@ -1,15 +1,13 @@
-import re
 import os
+import re
 import sys
 import time
-
 from multiprocessing.dummy import Lock
+
+from scrapers.base_scraper import ScraperBase
+from scrapers.data_keys import DataKeys
 from utilities.utils import load_page
 from utilities.utils import setup_browser
-
-from scrapers.data_keys import DataKeys
-from scrapers.data_keys import BOOL_VALUES
-from scrapers.base_scraper import ScraperBase
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "modules"))
