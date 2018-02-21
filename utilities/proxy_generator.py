@@ -34,13 +34,23 @@ def request(driver, proxy_type):
         raise Exception("bad proxy type")
 
 
+def get_paied_proxies():
+    with open('utilities/proxies.txt') as f:
+        content = f.readlines()
+
+    # you may also want to remove whitespace characters like `\n` at the end of each line
+    content = [x.strip() for x in content]
+    return content
+
+
 def get_new_proxies(proxy_type):
     print("Obtaining new proxies")
     driver = setup_browser('phantomjs')
     # driver = setup_browser('firefox')
     request(driver, proxy_type)
     wait = WebDriverWait(driver, 15)
-    proxy_table = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "proxy__t"))).find_element_by_tag_name("tbody")
+    proxy_table = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "proxy__t"))).find_element_by_tag_name(
+        "tbody")
     proxy_lines = proxy_table.find_elements_by_tag_name("tr")
 
     proxies = []
@@ -67,4 +77,3 @@ def get_new_proxies(proxy_type):
                 pass
 
     return working_proxies
-

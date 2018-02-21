@@ -4,7 +4,7 @@ import os
 import sys
 import traceback
 
-from utilities.utils import configure_logging
+from utilities.logging import configure_logging
 from utilities.utils import Configs
 from utilities.utils import write_to_csv
 from utilities.utils import write_to_excel
@@ -15,8 +15,10 @@ from scrapers.icobazaar import IcoBazaar
 from scrapers.icodrops import IcoDrops
 from scrapers.tokentops import TokenTops
 from scrapers.icomarks import IcoMarks
+from scrapers.trackico import TrackIco
 from scrapers.telegram import Telegram
 from scrapers.bitcointalk import BitcoinTalk
+from scrapers.reddit import Reddit
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "modules"))
@@ -43,8 +45,8 @@ def main():
     try:
         scraper = IcoMarks(logger, Configs.get('max_threads'))
         data = scraper.scrape_website()
-        scraper = BitcoinTalk(logger)
-        scraper.extract_bitcointalk(data)
+        scraper = Reddit(logger)
+        scraper.exctract_reddit(data)
         write_to_csv("icomarks.csv", data)
     except:
         logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
@@ -83,7 +85,7 @@ def main():
     #     scraper = IcoDrops(logger, Configs.get('max_threads'))
     #     data = scraper.scrape_website()
     #     write_to_csv("icodrops.csv", data)
-    # except :
+    # except:
     #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
     # try:

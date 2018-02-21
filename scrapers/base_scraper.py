@@ -3,6 +3,7 @@ from multiprocessing import Lock
 from multiprocessing.pool import ThreadPool
 from utilities.utils import setup_browser
 from utilities.utils import Configs
+from scrapers.data_keys import DataKeys
 
 import tqdm
 

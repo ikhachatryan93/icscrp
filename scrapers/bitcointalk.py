@@ -13,18 +13,20 @@ from utilities.utils import load_page
 from utilities.utils import load_page_via_proxies_as_text
 from utilities.utils import load_page_as_text
 from utilities.utils import setup_browser
-from utilities.proxy_generator import get_new_proxies
+from utilities.proxy_generator import get_paied_proxies
 
 
 class BitcoinTalk:
     def __init__(self, logger):
         self.html_parser = 'html5lib'
-        self.max_threads = 5
+        self.max_threads = 15
         self.mutex = Lock()
         self.driver = setup_browser('phantomjs')
         self.logger = logger
         # self.proxies = get_new_proxies('https')
-        self.proxies = ['107.150.212.46:28239:segkhachat:so8oep', 'local']
+        self.proxies = get_paied_proxies()
+        self.pr_len = len(self.proxies)
+        self.proxy_id = 0
 
     def scrape_listings(self, url):
         try:
@@ -65,9 +67,14 @@ class BitcoinTalk:
 
     def scrape_profile(self, url):
         try:
-            #bs = load_page_as_text(url)
-            bs = load_page_via_proxies_as_text(url, random.choice(self.proxies))
-            #bs = load_page_via_proxies_as_text(url, random.choice(self.proxies))
+            # bs = load_page_as_text(url)
+            ip = self.proxies[self.proxy_id % self.pr_len]
+            self.proxy_id += 1
+            if self.proxy_id > 1000000:
+                self.proxy_id = 0
+
+            bs = load_page_via_proxies_as_text(url, ip)
+            # bs = load_page_via_proxies_as_text(url, random.choice(self.proxies))
         except:
             print(traceback.format_exc())
             return -1, -1
@@ -77,8 +84,8 @@ class BitcoinTalk:
             total_activity = sum(int(act.split(':')[1]) for act in activities)
             total_comments = len(activities)
         else:
-            self.logger.critical('Bot detection reject in {}'.format(url))
-            time.sleep(20)
+            self.logger.critical('Bot detection reject in {}'.format(ip))
+            # time.sleep(5)
             return self.scrape_profile(url)
 
         return total_activity // total_comments, total_comments
@@ -93,7 +100,8 @@ class BitcoinTalk:
                     continue
 
                 pool = ThreadPool(self.max_threads)
-                btc_comments = list(tqdm.tqdm(pool.imap(self.scrape_profile, btc_pages), total=len(btc_pages)))
+                btc_comments = list(
+                    tqdm.tqdm(pool.imap_unordered(self.scrape_profile, btc_pages), total=len(btc_pages)))
                 pool.close()
                 pool.join()
 

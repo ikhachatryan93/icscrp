@@ -75,7 +75,7 @@ class Configs:
         cfg = Configs.config[key]
 
         if check_for_none and cfg is None:
-            logging.error('''Please specify \'{}\' in configs.txt file!'''.format(key))
+            print('''Please specify \'{}\' in configs.txt file!'''.format(key))
             exit(1)
 
         return cfg
@@ -231,19 +231,15 @@ def load_page(url, parser):
 
 
 def load_page_via_proxies_as_text(url, proxy):
-    print(proxy + " -> " + url)
     proxy_prop = proxy.split(':')
 
-    if proxy == 'local':
-        print('switching to local')
-        return load_page_as_text(url)
-
-    header = make_headers(user_agent=ua.random, proxy_basic_auth=proxy_prop[2] + ':' + proxy_prop[3])
+    header = make_headers(user_agent=ua.random)#, proxy_basic_auth=proxy_prop[2] + ':' + proxy_prop[3])
     req = urllib3.ProxyManager('https://' + proxy_prop[0] + ':' + proxy_prop[1], headers=header)
 
     try:
-        html = req.urlopen('GET', url, timeout=10)
+        html = req.urlopen('GET', url, timeout=5)
     except urllib3.exceptions.MaxRetryError:
+        print('Bad proxie {}'.format(proxy))
         raise Exception('Timout error while requesting: {}'.format(url))
 
     content_type = html.headers.get('Content-Type')
