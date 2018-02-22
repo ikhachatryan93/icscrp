@@ -48,19 +48,9 @@ class ScraperBase:
     def scrape_profile(self, url):
         raise NotImplementedError('scrap_profile not implemented yet')
 
-    def process_date_type1(self, data, key):
-        """
-
-        :param data:
-        :param key: %d.%m.%y format
-        :rtype: %d-%m-%y format
-        """
-        if key in data:
-            date = data[key]
-            try:
-                data[key] = datetime.strptime(date, '%d.%m.%y').strftime('%d-%m-%Y')
-            except ValueError:
-                self.logger.warning('Could not format date from {}'.format(DataKeys.PROFILE_URL))
+    @staticmethod
+    def process(url):
+        raise NotImplementedError('scrap_profile not implemented yet')
 
     def scrape_profiles(self, pages):
         if self.engine == 'selenium':

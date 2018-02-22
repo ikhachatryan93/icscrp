@@ -13,6 +13,8 @@ from scrapers.data_keys import DataKeys
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.base_scraper import ScraperBase
 
+from scrapers.dataprocessor import DataProcessor
+
 
 class TrackIco(ScraperBase):
     def __init__(self, logger, max_threads=1, max_browsers=0, ):
@@ -150,7 +152,7 @@ class TrackIco(ScraperBase):
 
         # getting social pages
         # TODO: maybe will be necessary to add other community types
-        map = {'homepage': DataKeys.WEBSITE, 'bitcointalk': DataKeys.BITCOINTALK_URL,
+        map_ = {'homepage': DataKeys.WEBSITE, 'bitcointalk': DataKeys.BITCOINTALK_URL,
                'twitter': DataKeys.TWITTER_URL, 'facebook': DataKeys.FACEBOOK_URL,
                'telegram': DataKeys.TELEGRAM_URL, 'github': DataKeys.GITHUB_URL,
                'reddit': DataKeys.REDDIT_URL, 'linkedin': DataKeys.LINKEDIN_URL,
@@ -161,7 +163,7 @@ class TrackIco(ScraperBase):
             for page in social_pages:
                 try:
                     if re.sub('[^\w]', '', page['onclick'].split('link-')[1]) != 'whitepaper':
-                        key = map[re.sub('[^\w]', '', page['onclick'].split('link-')[1]).strip()]
+                        key = map_[re.sub('[^\w]', '', page['onclick'].split('link-')[1]).strip()]
                         try:
                             value = page['href'].strip()
                             data[key] = value
@@ -175,4 +177,13 @@ class TrackIco(ScraperBase):
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Social pages'))
 
+        TrackIco.process(data)
+
         return data
+
+    @staticmethod
+    def process(data):
+        data[DataKeys.ICO_START] = DataProcessor.process_date_type2(data[DataKeys.ICO_START])
+        data[DataKeys.ICO_END] = DataProcessor.process_date_type2(data[DataKeys.ICO_END])
+        data[DataKeys.PRE_ICO_START] = DataProcessor.process_date_type2(data[DataKeys.PRE_ICO_START])
+        data[DataKeys.PRE_ICO_END] = DataProcessor.process_date_type2(data[DataKeys.PRE_ICO_END])

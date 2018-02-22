@@ -80,7 +80,6 @@ class Reddit:
             self.logger.critical("Could not extract data from {} url".format(user_redit_url))
             return
 
-        # TODO ------------------round to nearest
         return post_karma
 
     def exctract_reddit(self, data):

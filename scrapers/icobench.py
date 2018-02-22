@@ -138,7 +138,12 @@ class IcoBench(ScraperBase):
             description_tag = bs.find('div', {'class': 'name'})
             name_and_description = description_tag.findChildren(re.compile('h\d'))
             data[DataKeys.NAME] = name_and_description[0].text.strip()
-            data[DataKeys.DESCRIPTION] = name_and_description[1].text.strip()
+            #data[DataKeys.DESCRIPTION] = name_and_description[1].text.strip()
+        except:
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Name and/or Description'))
+
+        try:
+            data[DataKeys.DESCRIPTION] = bs.find('div', {'class': 'name'}).parent.find_next_sibling('p').text.strip()
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Name and/or Description'))
 

@@ -1,11 +1,16 @@
 
 *.xml
 *.iml
-*.xml
 *.pyc
+*.log
+*.csv
 *.zip
-*.exe
 *.gz
 *.bz2
+*.exe
 *.js
-out.xlsx
+*.md
+utilities/drivers/phantomjs-2.1.1-windows/ChangeLog
+*.xls
+*.xls
+trackico.xls

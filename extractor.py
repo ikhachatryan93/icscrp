@@ -19,6 +19,7 @@ from scrapers.trackico import TrackIco
 from scrapers.telegram import Telegram
 from scrapers.bitcointalk import BitcoinTalk
 from scrapers.reddit import Reddit
+from scrapers.dataprocessor import DataProcessor
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "modules"))
@@ -42,14 +43,14 @@ def main():
     logger = configure_logging(Configs.get('logging_handler'))
     parse_arguments()
 
-    try:
-        scraper = IcoMarks(logger, Configs.get('max_threads'))
-        data = scraper.scrape_website()
-        scraper = Reddit(logger)
-        scraper.exctract_reddit(data)
-        write_to_csv("icomarks.csv", data)
-    except:
-        logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    # try:
+    #     scraper = IcoMarks(logger, Configs.get('max_threads'))
+    #     data = scraper.scrape_website()
+    #     scraper = Reddit(logger)
+    #     scraper.exctract_reddit(data)
+    #     write_to_csv("icomarks.csv", data)
+    # except:
+    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
     # try:
     #     scraper = IcoMarks(logger, Configs.get('max_threads'))
@@ -64,14 +65,6 @@ def main():
     #     write_to_csv("tokentops.csv", data)
     # except:
     #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
-
-    # try:
-    #     scraper = IcoRating(logger, Configs.get('max_threads'))
-    #     data = scraper.scrape_website()
-    #     write_to_csv("icorating.csv", data)
-    # except:
-    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
-    #
 
     # try:
     #     scraper = IcoBazaar(logger, Configs.get('max_threads'))
@@ -95,12 +88,12 @@ def main():
     # except :
     #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
-    # try:
-    #     scraper = IcoRating(logger, Configs.get('max_threads'))
-    #     data = scraper.scrape_website()
-    #     write_to_csv("icorating.csv", data)
-    # except:
-    #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    try:
+        scraper = IcoRating(logger, Configs.get('max_threads'))
+        data = scraper.scrape_website()
+        write_to_csv("icorating.csv", data)
+    except:
+        logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
     # try:
     #     scraper = TrackIco(logger, Configs.get('max_threads'))

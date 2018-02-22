@@ -8,6 +8,8 @@ from scrapers.base_scraper import ScraperBase
 from utilities.utils import load_page
 from utilities.utils import load_page_with_selenium
 
+from scrapers.dataprocessor import DataProcessor
+
 
 class IcoRating(ScraperBase):
     def __init__(self, logger, max_threads=1, max_browsers=0):
@@ -96,7 +98,7 @@ class IcoRating(ScraperBase):
                         rating = investment_ratings[value.upper()]
                         if rating:
                             data[DataKeys.INVESTMENT_RATING] = rating
-        except Exception as e:
+        except:
             self.logger.warning('Exception while scraping {} from {}'.format('rating info', url))
 
         try:
@@ -157,12 +159,13 @@ class IcoRating(ScraperBase):
         except:
             self.logger.error(self.NOT_FOUND_MSG.format(url + '/details', 'info table'))
 
-        self.process(data)
+        IcoRating.process(data)
 
         return data
 
-    def process(self, data):
-        self.process_date_type1(data, DataKeys.ICO_START)
-        self.process_date_type1(data, DataKeys.ICO_END)
-        self.process_date_type1(data, DataKeys.PRE_ICO_START)
-        self.process_date_type1(data, DataKeys.PRE_ICO_END)
+    @staticmethod
+    def process(data):
+        data[DataKeys.ICO_START] = DataProcessor.process_date_type1(data[DataKeys.ICO_START])
+        data[DataKeys.ICO_END] = DataProcessor.process_date_type1(data[DataKeys.ICO_END])
+        data[DataKeys.PRE_ICO_START] = DataProcessor.process_date_type1(data[DataKeys.PRE_ICO_START])
+        data[DataKeys.PRE_ICO_END] = DataProcessor.process_date_type1(data[DataKeys.PRE_ICO_END])
