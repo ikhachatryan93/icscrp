@@ -27,7 +27,7 @@ class TokenTops(ScraperBase):
         self.engine = 'bs4'
 
         # should be 'firefox', 'chrome' or 'phantomjs'(headless)
-        self.browser_name = 'phantomjs'
+        self.browser_name = 'firefox'
 
         # should be 'html5lib', 'lxml' or 'html.parser'
         self.html_parser = 'lxml'

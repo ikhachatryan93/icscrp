@@ -57,7 +57,7 @@ class ScraperBase:
         if self.engine == 'selenium':
             self.initialize_browsers()
 
-        print("Scraping profiles")
+        logging.info("Scraping profiles from {}".format(self.domain))
         pool = ThreadPool(self.max_threads)
         profile_datas = list(tqdm.tqdm(pool.imap(self.scrape_profile, pages), total=len(pages)))
         pool.close()
@@ -69,7 +69,7 @@ class ScraperBase:
     def scrape_website(self):
         listings = []
         for url in self.urls:
-            self.logger.info('Scraping data from {}'.format(url))
+            logging.info('Scraping data from {}'.format(url))
             listings += (self.scrape_listings(url))
 
         # debugging

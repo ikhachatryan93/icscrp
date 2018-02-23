@@ -59,7 +59,7 @@ def process_country_names(data, country_keys, keep_unconverted=True, default_val
     :param data: list of dict data
     :param keep_unconverted: keep long string country name if conversion failed
     :param country_keys: list of keys in data referring to country fields
-    :param default_value: if keep_unconverted IS FALSE, default_value will be used in case of conversion fail
+    :param default_value: default_value will be used in case of conversion fail if keep_unconverted is false, and in case of n/a words
     :param words_unspecified: list of the words identifying that country field is not valid (e.g unspecified, unknown, etc)
 
     Returns:
@@ -67,28 +67,41 @@ def process_country_names(data, country_keys, keep_unconverted=True, default_val
     """
     for country_key in country_keys:
         for d in data:
-            country = d[country_key]
+            alpha_3_names = ''
+            countries = d[country_key]
+            for cntr in countries.split(','):
+                if alpha_3_names:
+                    alpha_3_names += ', '
 
-            if country in words_unspecified:
-                d[country_key] = BOOL_VALUES.NOT_AVAILABLE
-                continue
+                country = cntr.strip()
+                if country in words_unspecified or country == default_value:
+                    alpha_3_names += default_value
+                    continue
 
-            if country != BOOL_VALUES.NOT_AVAILABLE and len(country) != 3:
-                try:
-                    alfa_3 = pycountry.countries.get(name=country)
-                except KeyError:
+                if country != BOOL_VALUES.NOT_AVAILABLE:
+                    if len(country) == 3:
+                        alpha_3_names += country
+                        continue
+
+                    # not in iso standard
+                    if country == 'UK':
+                        country = 'United Kingdom'
+
                     try:
-                        alfa_3 = pycountry.countries.get(official_name=country)
+                        alpha_3_names += pycountry.countries.get(name=country).alpha_3
                     except KeyError:
                         try:
-                            alfa_3 = pycountry.countries.get(alfa_2=country)
+                            alpha_3_names += pycountry.countries.get(official_name=country).alpha_3
                         except KeyError:
-                            if not keep_unconverted:
-                                d[country_key] = default_value
-                            logging.error('Could not find alfa_3 format for country name: {}'.format(country))
-                            continue
+                            try:
+                                alpha_3_names += pycountry.countries.get(alpha_2=country).alpha_3
+                            except KeyError:
+                                if not keep_unconverted:
+                                    alpha_3_names += default_value
+                                logging.error('Could not find alfa_3 format for country name: {}'.format(country))
+                                continue
 
-                d[country] = alfa_3
+            d[country_key] = alpha_3_names
 
 
 def __data_len(dct, n_a):
@@ -136,7 +149,7 @@ def __merge(d, sub_data, priority_key, priority_table, n_a):
                         d[key] = value
 
 
-def merge_conflicts(data: list, eq_keys: list, priority_key: str, priority_table: dict, n_a) -> None:
+def merge_conflicts(data: list, eq_keys: list, priority_key: str, priority_table: dict, n_a: str) -> None:
     """
     Merge data from different sources. Priority table should be specified, since in case of conflicts the privilege will
     be given to the element with higher priority
