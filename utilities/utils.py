@@ -16,6 +16,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from urllib3 import make_headers
 from validate import Validator
 from validate import VdtValueError
+from selenium.webdriver.firefox.options import Options
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "drivers"))
@@ -135,6 +136,9 @@ def setup_chrome(bpath, maximize=True):
 def setup_firefox(bpath, maximize=True):
     firefox_profile = webdriver.FirefoxProfile()
 
+    options = Options()
+    options.add_argument("--headless")
+
     # disable css
     firefox_profile.set_preference('permissions.default.stylesheet', 2)
     # disable images
@@ -144,7 +148,7 @@ def setup_firefox(bpath, maximize=True):
     # disable javascript
     firefox_profile.set_preference('permissions.default.image', 2)
 
-    driver = webdriver.Firefox(executable_path=bpath)  # , firefox_profile=firefox_profile)
+    driver = webdriver.Firefox(options=options, executable_path=bpath)  # , firefox_profile=firefox_profile)
 
     # maximize browser
     if maximize:

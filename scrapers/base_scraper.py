@@ -11,7 +11,7 @@ import tqdm
 
 # Abstract class
 class ScraperBase:
-    def __init__(self, logger=None, threads=1, browsers=1):
+    def __init__(self, threads=1, browsers=1):
 
         self.max_threads = threads
         self.max_browsers = browsers

@@ -8,11 +8,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from scrapers.base_scraper import ScraperBase
 from scrapers.data_keys import DataKeys
+from scrapers.data_keys import SOURCES
+
 from utilities.utils import click
 from utilities.utils import load_page
 from utilities.utils import setup_browser
 
 from urllib.request import urljoin
+
 
 class TokenTops(ScraperBase):
     def __init__(self, max_threads=1, max_browsers=0):
@@ -52,7 +55,8 @@ class TokenTops(ScraperBase):
                 elements = driver.find_elements_by_css_selector('.t_wrap.t_line')
                 for e in elements:
                     urls.append(e.get_attribute('href'))
-                next_ = wait.until(EC.presence_of_element_located((By.XPATH, ('//a[contains(text(), "»") and @class="pagination__link"]'))))
+                next_ = wait.until(EC.presence_of_element_located(
+                    (By.XPATH, ('//a[contains(text(), "»") and @class="pagination__link"]'))))
                 if next_:
                     click(driver, next_)
                 else:
@@ -72,6 +76,7 @@ class TokenTops(ScraperBase):
     def scrape_profile(self, url):
         data = DataKeys.initialize()
         data[DataKeys.PROFILE_URL] = url
+        data[DataKeys.SOURCE] = SOURCES.TOKENTOPS
 
         try:
             bs = load_page(url, self.html_parser)

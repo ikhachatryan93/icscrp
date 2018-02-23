@@ -1,7 +1,6 @@
 import re
 import sys
 import traceback
-import logging
 from multiprocessing.pool import ThreadPool
 from urllib.request import URLError
 from urllib.request import urljoin
@@ -11,6 +10,7 @@ import tqdm
 from scrapers.base_scraper import ScraperBase
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
+from scrapers.data_keys import SOURCES
 from utilities.utils import load_page
 
 
@@ -110,7 +110,7 @@ class IcoBench(ScraperBase):
             pass
 
         if max_url_id:
-            # unomment for single page debug
+            # uncomment for single page debug
             # return self.scrape_listings_via_pagin_next(url)
 
             url_query = self.urls[0] + '?page='
@@ -128,6 +128,7 @@ class IcoBench(ScraperBase):
     def scrape_profile(self, url):
         data = DataKeys.initialize()
         data[DataKeys.PROFILE_URL] = url
+        data[DataKeys.SOURCE] = SOURCES.ICOBENCH
         try:
             bs = load_page(url, self.html_parser)
         except:
@@ -139,7 +140,7 @@ class IcoBench(ScraperBase):
             description_tag = bs.find('div', {'class': 'name'})
             name_and_description = description_tag.findChildren(re.compile('h\d'))
             data[DataKeys.NAME] = name_and_description[0].text.strip()
-            #data[DataKeys.DESCRIPTION] = name_and_description[1].text.strip()
+            # data[DataKeys.DESCRIPTION] = name_and_description[1].text.strip()
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Name and/or Description'))
 

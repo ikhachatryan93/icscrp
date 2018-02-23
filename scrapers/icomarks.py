@@ -9,6 +9,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from scrapers.base_scraper import ScraperBase
 from scrapers.data_keys import DataKeys
 from scrapers.data_keys import BOOL_VALUES
+from scrapers.data_keys import SOURCES
+
 from utilities.utils import click
 from utilities.utils import move_to_element
 from utilities.utils import load_page
@@ -82,6 +84,7 @@ class IcoMarks(ScraperBase):
     def scrape_profile(self, url):
         data = DataKeys.initialize()
         data[DataKeys.PROFILE_URL] = url
+        data[DataKeys.SOURCE] = SOURCES.ICOMARKS
 
         try:
             bs = load_page(url, self.html_parser)

@@ -5,6 +5,16 @@ class BOOL_VALUES:
     NOT_AVAILABLE = '-'
 
 
+class SOURCES:
+    ICODROPS = 'icodrops'
+    ICOBAZAAR = 'icobazaar'
+    ICOBENCH = 'icobench'
+    TRACKICO = 'trackico'
+    TOKENTOPS = 'topentops'
+    ICOMARKS = 'icomarks'
+    ICORATING = 'icoratings'
+
+
 class DataKeys:
     @staticmethod
     def initialize():
@@ -17,6 +27,7 @@ class DataKeys:
 
         return data
 
+    SOURCE = 'source'
     NAME = 'name'
     TOKEN_NAME = 'ticker'
     PROFILE_URL = 'ico_url'
@@ -77,7 +88,6 @@ class DataKeys:
     REDDIT_COMMENTS_COUNT = 'rdt_comment_count'
     REDDIT_POSTS_COUNT = 'rdt_post_count'
     REDDIT_AVG_KARMA = 'rdt_usr_avg_karma'
-
 
     # scores
     OVERALL_SCORES = 'website_overall_rating'

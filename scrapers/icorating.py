@@ -4,6 +4,7 @@ from urllib.request import urljoin
 from scrapers.base_scraper import ScraperBase
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
+from scrapers.data_keys import SOURCES
 import scrapers.dataprocessor as processor
 from utilities.utils import load_page
 from utilities.utils import load_page_with_selenium
@@ -45,6 +46,7 @@ class IcoRating(ScraperBase):
     def scrape_profile(self, url):
         data = DataKeys.initialize()
         data[DataKeys.PROFILE_URL] = url
+        data[DataKeys.SOURCE] = SOURCES.ICORATING
 
         try:
             bs = load_page(url, self.html_parser)

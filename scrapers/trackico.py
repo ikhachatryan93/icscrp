@@ -10,6 +10,7 @@ from urllib.request import urljoin
 from utilities.utils import load_page
 
 from scrapers.data_keys import DataKeys
+from scrapers.data_keys import SOURCES
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.base_scraper import ScraperBase
 
@@ -78,7 +79,7 @@ class TrackIco(ScraperBase):
 
         listings_count = int(
             bs.find('span', {'class': 'flex-grow text-right text-lighter pr-2'}).text.split('of')[1].strip())
-        pages_count = math.ceil(listings_count / 24)  # because there is 24 listings in every page
+        pages_count = int(math.ceil(listings_count / 24))  # because there is 24 listings in every page
 
         for i in range(2, pages_count + 1):
             pages_urls.append(url + '/{}/'.format(i))
@@ -89,6 +90,7 @@ class TrackIco(ScraperBase):
 
         data = DataKeys.initialize()
         data[DataKeys.PROFILE_URL] = url
+        data[DataKeys.SOURCE] = SOURCES.TRACKICO
 
         try:
             bs = load_page(url, self.html_parser)

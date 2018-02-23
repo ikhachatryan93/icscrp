@@ -4,6 +4,7 @@ from urllib.request import urljoin
 
 from scrapers.base_scraper import ScraperBase
 from scrapers.data_keys import DataKeys
+from scrapers.data_keys import SOURCES
 from utilities.utils import load_page
 
 
@@ -47,6 +48,7 @@ class IcoDrops(ScraperBase):
     def scrape_profile(self, url):
         data = DataKeys.initialize()
         data[DataKeys.PROFILE_URL] = url
+        data[DataKeys.SOURCE] = SOURCES.ICODROPS
 
         try:
             bs = load_page(url, self.html_parser)

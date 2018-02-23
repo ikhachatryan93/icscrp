@@ -51,7 +51,7 @@ def process_date_type2(date, default):
     return rdate
 
 
-def process_country(data, country_keys, keep_unconverted=True, default_value=None, words_unspecified=()):
+def process_country_names(data, country_keys, keep_unconverted=True, default_value=None, words_unspecified=()):
     """
     Format the country names to alfa_3 format of ISO 3166 standard
 
@@ -60,7 +60,7 @@ def process_country(data, country_keys, keep_unconverted=True, default_value=Non
     :param keep_unconverted: keep long string country name if conversion failed
     :param country_keys: list of keys in data referring to country fields
     :param default_value: if keep_unconverted IS FALSE, default_value will be used in case of conversion fail
-    :param words_unspecified: list of the specific words identifying that country field is not valid (e.g unspecified, unknown, etc)
+    :param words_unspecified: list of the words identifying that country field is not valid (e.g unspecified, unknown, etc)
 
     Returns:
     :return: data with alfa_3 formatted counties
@@ -136,7 +136,7 @@ def __merge(d, sub_data, priority_key, priority_table, n_a):
                         d[key] = value
 
 
-def merge_conflicts(data: list, eq_keys: list, priority_key: str, priority_table: dict, n_a):
+def merge_conflicts(data: list, eq_keys: list, priority_key: str, priority_table: dict, n_a) -> None:
     """
     Merge data from different sources. Priority table should be specified, since in case of conflicts the privilege will
     be given to the element with higher priority

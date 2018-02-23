@@ -29,14 +29,16 @@ class Telegram:
 
         try:
             num_tel_sub = int(bs.find('div', {'class': 'tgme_page_extra'}).text)
+            Telegram.mutex.acquire()
             d[DataKeys.TELEGRAM_SUBSCRIBERS] = num_tel_sub
+            Telegram.mutex.release()
         except ValueError:
             logging.CRITICAL('Could not convert telegram users count to number: {}'.format(url))
         except (AttributeError, ValueError):
             logging.warning('Could not find telegram users count: {}'.format(url))
 
     @staticmethod
-    def scrape_infos(data):
+    def extract_telegram_info(data):
         pool = ThreadPool(Telegram.max_threads)
         tqdm.tqdm(pool.imap(Telegram.scrape_info, data), total=len(data))
         pool.close()
