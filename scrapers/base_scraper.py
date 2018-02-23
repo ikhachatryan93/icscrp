@@ -4,6 +4,7 @@ from multiprocessing.pool import ThreadPool
 from utilities.utils import setup_browser
 from utilities.utils import Configs
 from scrapers.data_keys import DataKeys
+import logging
 
 import tqdm
 
@@ -15,7 +16,7 @@ class ScraperBase:
         self.max_threads = threads
         self.max_browsers = browsers
 
-        self.logger = logger
+        self.logger = logging
 
         # should be 'selenium' or 'bs4'
         # TODO: add scrapy support

@@ -17,9 +17,9 @@ sys.path.append(os.path.join(dir_path, "scrapers"))
 
 class IcoBazaar(ScraperBase):
 
-    def __init__(self, logger, max_threads=1, max_browsers=0):
+    def __init__(self, max_threads=1, max_browsers=0):
 
-        super(IcoBazaar, self).__init__(logger, max_threads, max_browsers)
+        super(IcoBazaar, self).__init__(max_threads, max_browsers)
 
         # should be 'selenium' or 'bs4'
         self.engine = 'selenium'

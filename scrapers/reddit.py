@@ -1,31 +1,28 @@
-import os
-import sys
+import logging
 import re
-import tqdm
 import traceback
-
-from multiprocessing.dummy import Lock
 from multiprocessing.pool import ThreadPool
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(os.path.join(dir_path, "modules"))
-sys.path.append(os.path.join(dir_path, "drivers"))
-sys.path.append(os.path.join(dir_path, "scrapers"))
-sys.path.append(os.path.join(dir_path, "utilities"))
+import tqdm
 
-from utilities.utils import load_page
-from scrapers.data_keys import DataKeys
 from scrapers.data_keys import BOOL_VALUES
+from scrapers.data_keys import DataKeys
+from utilities.utils import load_page
+
+
+# dir_path = os.path.dirname(os.path.realpath(__file__))
+# sys.path.append(os.path.join(dir_path, "modules"))
+# sys.path.append(os.path.join(dir_path, "drivers"))
+# sys.path.append(os.path.join(dir_path, "scrapers"))
+# sys.path.append(os.path.join(dir_path, "utilities"))
 
 
 class Reddit:
-    def __init__(self, logger):
-        self.html_parser = 'html5lib'
-        self.max_threads = 5
-        self.mutex = Lock()
-        self.logger = logger
+    html_parser = 'html5lib'
+    max_threads = 4
 
-    def scrape_listings(self, url):
+    @staticmethod
+    def scrape_listings(url):
 
         next_page_url = 1
         post_count = 0
@@ -52,17 +49,17 @@ class Reddit:
                     except AttributeError:
                         next_page_url = 0
                 except (AttributeError, TypeError):
-                    self.logger.error('Unable to scrap profile for {}'.format(url))
+                    logging.error('Unable to scrap profile for {}'.format(url))
             else:
                 next_page_url = 0
 
         return post_count, comment_count, user_list
 
-    def scrap_user_karma(self, user_name):
-
+    @staticmethod
+    def scrap_user_karma(user_name):
         user_redit_url = 'https://www.reddit.com/user/' + user_name
         try:
-            bs = load_page(user_redit_url, self.html_parser)
+            bs = load_page(user_redit_url, Reddit.html_parser)
             try:
                 post_karma = int(
                     re.sub('[^\w]', '', bs.find('div', {'class': 'titlebox'}).find('span', {'class': 'karma'}).text)
@@ -73,33 +70,34 @@ class Reddit:
                         bs.find('div', {'class': 'ProfileSidebar__counterInfo'}).text.split("Post Karma")[0].strip()
                     )
                 except (AttributeError, ValueError):
-                    self.logger.error("Unable to get user post karma info for user [{}]".format(user_name))
+                    logging.error("Unable to get user post karma info for user [{}]".format(user_name))
                     return
         except:
-            self.logger.info(traceback.format_exc())
-            self.logger.critical("Could not extract data from {} url".format(user_redit_url))
+            logging.info(traceback.format_exc())
+            logging.critical("Could not extract data from {} url".format(user_redit_url))
             return
 
         return post_karma
 
-    def exctract_reddit(self, data):
+    @staticmethod
+    def exctract_reddit(data):
 
         for d in data:
             if d[DataKeys.REDDIT_URL] != BOOL_VALUES.NOT_AVAILABLE:
-                self.logger.info('Obtainging reddit information for {} ico'.format(d['name']))
+                logging.info('Obtainging reddit information for {} ico'.format(d['name']))
 
-                post_count, comment_count, users = self.scrape_listings(d[DataKeys.REDDIT_URL])
+                post_count, comment_count, users = Reddit.scrape_listings(d[DataKeys.REDDIT_URL])
 
-                pool = ThreadPool(self.max_threads)
+                pool = ThreadPool(Reddit.max_threads)
                 user_karmas = list(
                     tqdm.tqdm(
-                        pool.imap_unordered(self.scrap_user_karma, users), total=len(users)
+                        pool.imap_unordered(Reddit.scrap_user_karma, users), total=len(users)
                     )
                 )
 
                 valid_user_karmas = [k for k in user_karmas if k]
                 if len(valid_user_karmas) == 0:
-                    self.logger.critical('Could not extract any user karma from {}'.format([DataKeys.REDDIT_URL]))
+                    logging.critical('Could not extract any user karma from {}'.format([DataKeys.REDDIT_URL]))
                     continue
                 else:
                     total_user_karma = 0

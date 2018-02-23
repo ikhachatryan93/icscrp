@@ -19,7 +19,7 @@ from scrapers.trackico import TrackIco
 from scrapers.telegram import Telegram
 from scrapers.bitcointalk import BitcoinTalk
 from scrapers.reddit import Reddit
-from scrapers.dataprocessor import DataProcessor
+import scrapers.dataprocessor as DataProcessor
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "modules"))
@@ -40,7 +40,7 @@ def parse_arguments():
 
 
 def main():
-    logger = configure_logging(Configs.get('logging_handler'))
+    configure_logging(Configs.get('logging_handler'))
     parse_arguments()
 
     # try:
@@ -89,7 +89,7 @@ def main():
     #     logger.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
     try:
-        scraper = IcoRating(logger, Configs.get('max_threads'))
+        scraper = IcoRating(Configs.get('max_threads'))
         data = scraper.scrape_website()
         write_to_csv("icorating.csv", data)
     except:

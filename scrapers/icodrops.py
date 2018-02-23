@@ -8,9 +8,9 @@ from utilities.utils import load_page
 
 
 class IcoDrops(ScraperBase):
-    def __init__(self, logger, max_threads=1, max_browsers=0):
+    def __init__(self, max_threads=1, max_browsers=0):
 
-        super(IcoDrops, self).__init__(logger, max_threads, max_browsers)
+        super(IcoDrops, self).__init__(max_threads, max_browsers)
 
         # should be 'html5lib', 'lxml' or 'html.parser'
         self.html_parser = 'lxml'

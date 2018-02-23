@@ -1,20 +1,18 @@
 import re
 from urllib.request import urljoin
-from datetime import datetime
 
+from scrapers.base_scraper import ScraperBase
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
-from scrapers.base_scraper import ScraperBase
+import scrapers.dataprocessor as processor
 from utilities.utils import load_page
 from utilities.utils import load_page_with_selenium
 
-from scrapers.dataprocessor import DataProcessor
-
 
 class IcoRating(ScraperBase):
-    def __init__(self, logger, max_threads=1, max_browsers=0):
+    def __init__(self, max_threads=1, max_browsers=0):
 
-        super(IcoRating, self).__init__(logger, max_threads, max_browsers)
+        super(IcoRating, self).__init__(max_threads, max_browsers)
 
         # should be 'html5lib', 'lxml' or 'html.parser'
         self.html_parser = 'html5lib'
@@ -165,7 +163,7 @@ class IcoRating(ScraperBase):
 
     @staticmethod
     def process(data):
-        data[DataKeys.ICO_START] = DataProcessor.process_date_type1(data[DataKeys.ICO_START])
-        data[DataKeys.ICO_END] = DataProcessor.process_date_type1(data[DataKeys.ICO_END])
-        data[DataKeys.PRE_ICO_START] = DataProcessor.process_date_type1(data[DataKeys.PRE_ICO_START])
-        data[DataKeys.PRE_ICO_END] = DataProcessor.process_date_type1(data[DataKeys.PRE_ICO_END])
+        data[DataKeys.ICO_START] = processor.process_date_type1(data[DataKeys.ICO_START], default=data[DataKeys.ICO_START])
+        data[DataKeys.ICO_END] = processor.process_date_type1(data[DataKeys.ICO_END], default=data[DataKeys.ICO_END])
+        data[DataKeys.PRE_ICO_START] = processor.process_date_type1(data[DataKeys.PRE_ICO_START], default=data[DataKeys.PRE_ICO_START])
+        data[DataKeys.PRE_ICO_END] = processor.process_date_type1(data[DataKeys.PRE_ICO_END], default=data[DataKeys.PRE_ICO_END])

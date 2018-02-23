@@ -1,104 +1,167 @@
-from datetime import datetime
-import pycountry
 import logging
+import pycountry
+from datetime import datetime
 
 from scrapers.data_keys import BOOL_VALUES
-from scrapers.data_keys import DataKeys
+
+logger = logging
 
 
-class DataProcessor:
-    def __init__(self, data, logger):
-        self.data = data
-        self.logger = logger
+def process_date_type1(date, default):
+    """
+    Converts a date string from '02.08.1993' to '02-08-1993'
 
-    @staticmethod
-    def process_date_type1(date, keep_unconverted=True):
-        """
-        Converts a date string from '02.08.1993' to '02-08-1993'
+    Args:
+    :param date: %d.%m.%y formatted date
+    :param default: retrun this value ins case of conversion is failed
 
-        Args:
-        :param date: %d.%m.%y formatted date
-        :param keep_unconverted: whether return unconverted string or return BOOL_VALUE.NOT_AVALIABLE
+    Returns:
+    :return: %d-%m-%y formatted date, default if conversion failed.
+    """
+    try:
+        rdate = datetime.strptime(date, '%d.%m.%Y').strftime('%d-%m-%Y')
+    except ValueError:
+        logging.warning('Could not format date from {} string'.format(date))
+        return default
 
-        Returns:
-        :return: %d-%m-%y formatted date
-        """
+    return rdate
+
+
+def process_date_type2(date, default):
+    """
+    Converts a date string from 'Dec. 27, 2015' or 'December 27, 2015' to '27-12-2015'
+
+    Args:
+    :param date: %B %d, %Y or %b. %d, %Y format (e.g. March 24, 2018)
+    :param default: retrun this value ins case of conversion is failed
+
+    Returns:
+    :return: %d-%m-%y formated date, default if conversion failed.
+    """
+
+    try:
+        rdate = datetime.strptime(date, '%B %d, %Y').strftime('%d-%m-%Y')
+    except ValueError:
         try:
-            rdate = datetime.strptime(date, '%d.%m.%Y').strftime('%d-%m-%Y')
+            rdate = datetime.strptime(date, '%b. %d, %Y').strftime('%d-%m-%Y')
         except ValueError:
             logging.warning('Could not format date from {} string'.format(date))
-            if keep_unconverted:
-                return date
-            return BOOL_VALUES.NOT_AVAILABLE
+            return default
 
-        return rdate
+    return rdate
 
-    @staticmethod
-    def process_date_type2(date, keep_unconverted=True):
-        """
-        Converts a date string from 'Dec. 27, 2015' or 'December 27, 2015' to '27-12-2015'
 
-        Args:
-        :param date: %B %d, %Y or %b. %d, %Y format (e.g. March 24, 2018)
-        :param keep_unconverted: whether return unconverted string or return BOOL_VALUE.NOT_AVALIABLE
+def process_country(data, country_keys, keep_unconverted=True, default_value=None, words_unspecified=()):
+    """
+    Format the country names to alfa_3 format of ISO 3166 standard
 
-        Returns:
-        :return: %d-%m-%y format
-        """
+    Args:
+    :param data: list of dict data
+    :param keep_unconverted: keep long string country name if conversion failed
+    :param country_keys: list of keys in data referring to country fields
+    :param default_value: if keep_unconverted IS FALSE, default_value will be used in case of conversion fail
+    :param words_unspecified: list of the specific words identifying that country field is not valid (e.g unspecified, unknown, etc)
 
-        try:
-            rdate = datetime.strptime(date, '%B %d, %Y').strftime('%d-%m-%Y')
-        except ValueError:
-            try:
-                rdate = datetime.strptime(date, '%b. %d, %Y').strftime('%d-%m-%Y')
-            except ValueError:
-                logging.warning('Could not format date from {} string'.format(date))
-                if keep_unconverted:
-                    return date
-                return BOOL_VALUES.NOT_AVAILABLE
+    Returns:
+    :return: data with alfa_3 formatted counties
+    """
+    for country_key in country_keys:
+        for d in data:
+            country = d[country_key]
 
-        return rdate
+            if country in words_unspecified:
+                d[country_key] = BOOL_VALUES.NOT_AVAILABLE
+                continue
 
-    def process_country(self, country_keys, words_unspecified=(), keep_unkowns=True):
-        """
-        Format the country names to alfa_3 format of ISO 3166 standard
-        :type country_keys: list of keys in data refering to country fields
-        :type words_unspecified: list of the specific words identifyning that country field is not valid (e.g unspecified, unknown, etc)
-        :type keep_unkowns: bool value showing whether to keep unformated data or to remove
-        :rtype: list: data with alfa_3 formated countires
-        """
-        if words_unspecified is None:
-            words_unspecified = []
-        for country_key in country_keys:
-            for d in self.data:
-                country = d[country_key]
-
-                if country in words_unspecified:
-                    d[country_key] = BOOL_VALUES.NOT_AVAILABLE
-                    continue
-
-                if country != BOOL_VALUES.NOT_AVAILABLE and len(country) != 3:
+            if country != BOOL_VALUES.NOT_AVAILABLE and len(country) != 3:
+                try:
+                    alfa_3 = pycountry.countries.get(name=country)
+                except KeyError:
                     try:
-                        alfa_3 = pycountry.countries.get(name=country)
+                        alfa_3 = pycountry.countries.get(official_name=country)
                     except KeyError:
                         try:
-                            alfa_3 = pycountry.countries.get(official_name=country)
+                            alfa_3 = pycountry.countries.get(alfa_2=country)
                         except KeyError:
-                            try:
-                                alfa_3 = pycountry.countries.get(alfa_2=country)
-                            except KeyError:
-                                if not keep_unkowns:
-                                    d[country_key] = BOOL_VALUES.NOT_AVAILABLE
+                            if not keep_unconverted:
+                                d[country_key] = default_value
+                            logging.error('Could not find alfa_3 format for country name: {}'.format(country))
+                            continue
 
-                                self.logger.error('Could not find alfa_3 format for country name: {}'.format(country))
-                                continue
+                d[country] = alfa_3
 
-                    d[country] = alfa_3
 
-    def merge_conflicts(self, priority_key, priority_table):
-        """
+def __data_len(dct, n_a):
+    """ Get number of true* data in dict """
+    i = 0
+    for _, val in dct.items:
+        if val != n_a:
+            i += 1
 
-        :type priority_key: str name of the priority field (e.g. DataDypes.WEBSITE)
-        :type priority_table: dict prority table identifying whichs data should be keept if merge conflict occured
-        :
-        """
+    return i
+
+
+def __is_valid(d, n_a):
+    """ TODO: make more parametric """
+    return __data_len(d, n_a) >= 5
+
+
+def __pop_similar_subdata(d1, data, eq_keys):
+    idxs = []
+    for idx, d2 in enumerate(data):
+        eq = True
+        for eq_key in eq_keys:
+            if d1[eq_key] != d2[eq_key]:
+                eq = False
+                break
+        if eq:
+            idxs.append(idx)
+
+    sub_eq_data = []
+    for idx in idxs:
+        sub_eq_data.append(data.pop(idx))
+
+    return sub_eq_data if len(sub_eq_data) > 0 else None
+
+
+def __merge(d, sub_data, priority_key, priority_table, n_a):
+    for d2 in sub_data:
+        for key, value in d.items():
+            value2 = d2[key]
+            if value != value2:
+                if value == n_a:
+                    d[key] = value2
+                elif value2 != n_a:
+                    if priority_table[d2[priority_key]] < priority_table[d[priority_key]]:
+                        d[key] = value
+
+
+def merge_conflicts(data: list, eq_keys: list, priority_key: str, priority_table: dict, n_a):
+    """
+    Merge data from different sources. Priority table should be specified, since in case of conflicts the privilege will
+    be given to the element with higher priority
+
+    Args:
+    :param data: list of dict,
+    :param eq_keys: list of str, the keys from dict which identify the equality of data buckets(dicts)
+    :param priority_key: name of the priority field (e.g. DataDypes.WEBSITE)
+    :param priority_table: dict priority table identifying which data should be kept if merge conflict occurred
+                           give a value for each source, (e.g. {source3: 1, source1: 2, source3:2})
+    :param n_a: the object identifier for not available fields, (e.g. None, DataKeys.NOT_AVAILABLE)
+
+    Returns
+    :return None:
+    """
+    good_data = [d for d in data if __is_valid(d, n_a)]
+
+    # TODO:Sort somehow
+    # sort(good_data)
+
+    merged_data = []
+    while len(good_data) > 0:
+        d = good_data.pop()
+        similar_subdata = __pop_similar_subdata(d, good_data, eq_keys)
+        if not similar_subdata:
+            merged_data.append(d)
+        else:
+            __merge(d, similar_subdata, priority_key, priority_table, n_a)

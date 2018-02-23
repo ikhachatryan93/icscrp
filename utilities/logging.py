@@ -18,5 +18,3 @@ def configure_logging(handler_type):
     logger.addHandler(handler)
     logger.setLevel(logging.WARNING)
     logger.propagate = False
-
-    return logger

@@ -1,54 +1,45 @@
-from multiprocessing.dummy import Lock
+import logging
 from multiprocessing.pool import ThreadPool
-
+from multiprocessing.dummy import Lock
 import tqdm
 
 from utilities.utils import load_page
-
-telegram_urls = ['https://t.me/mirachat',
-                 'https://t.me/artoken',
-                 'https://t.me/familypointstoken',
-                 'https://t.me/LetBetCoin',
-                 'https://t.me/adhivetv',
-                 'https://t.me/play2live',
-                 'https://t.me/dockio',
-                 'https://t.me/juryonline_community',
-                 'https://t.me/joinchat/B3UENkIW3R9A6v_4KnpOZQ',
-                 'https://t.me/theabyss',
-                 'https://t.me/FintruX',
-                 'https://t.me/ArcBlock',
-                 'https://t.me/WePowerNetwork',
-                 'https://t.me/legolasannouncements',
-                 'https://t.me/joinchat/F9j7MhF-eb-t5SVPYptdyQ',
-                 'https://t.me/SapienNetwork',
-                 'https://t.me/joinchat/D4s22ERg5b3zYzaIgC01Iw',
-                 'https://t.me/aidcoincommunity']
+from scrapers.data_keys import DataKeys
 
 
 class Telegram:
-    def __init__(self, logger, max_threads=1):
+    # TODO: add config file for this attrs
+    html_parser = 'lxml'
+    max_threads = 10
+    logger = logging
+    mutex = Lock()
 
-        self.html_parser = 'lxml'
-        self.max_threads = max_threads
-        self.mutex = Lock()
-        self.logger = logger
-
-    def scrape_info(self, url):
-        try:
-            bs = load_page(url, self.html_parser)
-        except:
-            self.logger.warning('Could not load telegram page')
+    @staticmethod
+    def scrape_info(d):
+        if DataKeys.TELEGRAM_URL in d:
+            url = d[DataKeys.TELEGRAM_URL]
+        else:
             return
 
         try:
-            return {url: bs.find('div', {'class': 'tgme_page_extra'}).text}
+            bs = load_page(url, Telegram.html_parser)
         except:
-            self.logger.warning('Could not find subscribers number')
+            logging.warning('Could not load telegram page')
+            return
 
-    def scrape_infos(self, urls=telegram_urls):
-        pool = ThreadPool(self.max_threads)
-        telegram_url_subscribers = list(tqdm.tqdm(pool.imap(self.scrape_info, urls), total=len(urls)))
+        try:
+            num_tel_sub = int(bs.find('div', {'class': 'tgme_page_extra'}).text)
+            d[DataKeys.TELEGRAM_SUBSCRIBERS] = num_tel_sub
+        except ValueError:
+            logging.CRITICAL('Could not convert telegram users count to number: {}'.format(url))
+        except (AttributeError, ValueError):
+            logging.warning('Could not find telegram users count: {}'.format(url))
+
+    @staticmethod
+    def scrape_infos(data):
+        pool = ThreadPool(Telegram.max_threads)
+        tqdm.tqdm(pool.imap(Telegram.scrape_info, data), total=len(data))
         pool.close()
         pool.join()
 
-        return telegram_url_subscribers
+        return data

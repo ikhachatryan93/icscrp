@@ -53,7 +53,6 @@ class DataKeys:
 
     # social pages
     GITHUB_URL = 'github_page'
-    TELEGRAM_URL = 'telegram_page'
     MEDIUM_URL = 'medium_page'
     LINKEDIN_URL = 'linkedin_page'
     TWITTER_URL = 'twitter_page'
@@ -63,6 +62,10 @@ class DataKeys:
     LOGO_URL = 'logo_url'
     SLACK_URL = 'slack_url'
     YOUTUBE_URL = 'youtube_url'
+
+    # telefram
+    TELEGRAM_URL = 'telegram_page'
+    TELEGRAM_SUBSCRIBERS = 'teleg_subs_count'
 
     # bitcointalk
     BITCOINTALK_URL = 'btc_page'

@@ -18,9 +18,9 @@ from urllib.request import urljoin
 
 
 class IcoMarks(ScraperBase):
-    def __init__(self, logger, max_threads=1, max_browsers=0):
+    def __init__(self, max_threads=1, max_browsers=0):
 
-        super(IcoMarks, self).__init__(logger, max_threads, max_browsers)
+        super(IcoMarks, self).__init__(max_threads, max_browsers)
 
         # should be 'selenium' or 'bs4'
         # TODO: add scrapy support

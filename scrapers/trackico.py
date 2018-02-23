@@ -13,13 +13,13 @@ from scrapers.data_keys import DataKeys
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.base_scraper import ScraperBase
 
-from scrapers.dataprocessor import DataProcessor
+import scrapers.dataprocessor as processor
 
 
 class TrackIco(ScraperBase):
-    def __init__(self, logger, max_threads=1, max_browsers=0, ):
+    def __init__(self, max_threads=1, max_browsers=0, ):
 
-        super(TrackIco, self).__init__(logger, max_threads, max_browsers)
+        super(TrackIco, self).__init__(max_threads, max_browsers)
 
         # should be 'selenium' or 'bs4'
         # TODO: add scrapy support
@@ -153,11 +153,11 @@ class TrackIco(ScraperBase):
         # getting social pages
         # TODO: maybe will be necessary to add other community types
         map_ = {'homepage': DataKeys.WEBSITE, 'bitcointalk': DataKeys.BITCOINTALK_URL,
-               'twitter': DataKeys.TWITTER_URL, 'facebook': DataKeys.FACEBOOK_URL,
-               'telegram': DataKeys.TELEGRAM_URL, 'github': DataKeys.GITHUB_URL,
-               'reddit': DataKeys.REDDIT_URL, 'linkedin': DataKeys.LINKEDIN_URL,
-               'slack': DataKeys.SLACK_URL, 'blog': DataKeys.MEDIUM_URL,
-               'youtube': DataKeys.YOUTUBE_URL, 'instagram': DataKeys.INSTAGRAM_URL}
+                'twitter': DataKeys.TWITTER_URL, 'facebook': DataKeys.FACEBOOK_URL,
+                'telegram': DataKeys.TELEGRAM_URL, 'github': DataKeys.GITHUB_URL,
+                'reddit': DataKeys.REDDIT_URL, 'linkedin': DataKeys.LINKEDIN_URL,
+                'slack': DataKeys.SLACK_URL, 'blog': DataKeys.MEDIUM_URL,
+                'youtube': DataKeys.YOUTUBE_URL, 'instagram': DataKeys.INSTAGRAM_URL}
         try:
             social_pages = bs.find('div', {'class': 'card card-body text-center'}).find_all('a')
             for page in social_pages:
@@ -183,7 +183,10 @@ class TrackIco(ScraperBase):
 
     @staticmethod
     def process(data):
-        data[DataKeys.ICO_START] = DataProcessor.process_date_type2(data[DataKeys.ICO_START])
-        data[DataKeys.ICO_END] = DataProcessor.process_date_type2(data[DataKeys.ICO_END])
-        data[DataKeys.PRE_ICO_START] = DataProcessor.process_date_type2(data[DataKeys.PRE_ICO_START])
-        data[DataKeys.PRE_ICO_END] = DataProcessor.process_date_type2(data[DataKeys.PRE_ICO_END])
+        data[DataKeys.ICO_START] = processor.process_date_type2(data[DataKeys.ICO_START],
+                                                                default=data[DataKeys.ICO_START])
+        data[DataKeys.ICO_END] = processor.process_date_type2(data[DataKeys.ICO_END], default=data[DataKeys.ICO_END])
+        data[DataKeys.PRE_ICO_START] = processor.process_date_type2(data[DataKeys.PRE_ICO_START],
+                                                                    default=data[DataKeys.PRE_ICO_START])
+        data[DataKeys.PRE_ICO_END] = processor.process_date_type2(data[DataKeys.PRE_ICO_END],
+                                                                  default=data[DataKeys.PRE_ICO_END])

@@ -1,6 +1,7 @@
 import re
 import sys
 import traceback
+import logging
 from multiprocessing.pool import ThreadPool
 from urllib.request import URLError
 from urllib.request import urljoin
@@ -14,9 +15,9 @@ from utilities.utils import load_page
 
 
 class IcoBench(ScraperBase):
-    def __init__(self, logger, max_threads=1, max_browsers=0, ):
+    def __init__(self, max_threads=1, max_browsers=0, ):
 
-        super(IcoBench, self).__init__(logger, max_threads, max_browsers)
+        super(IcoBench, self).__init__(max_threads, max_browsers)
 
         # should be 'selenium' or 'bs4'
         # TODO: add scrapy support
