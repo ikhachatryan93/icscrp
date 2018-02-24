@@ -71,7 +71,7 @@ class IcoMarks(ScraperBase):
         if len(urls) == 0:
             self.logger.critical('Could not extract listings from'.format(url))
 
-        driver.close()
+        driver.quit()
 
         # bs = load_page(url, self.html_parser)
         # tags = bs.find('div', {'class': 'upcoming-sec__main'}).findAll('a', {'target': '_blank'})

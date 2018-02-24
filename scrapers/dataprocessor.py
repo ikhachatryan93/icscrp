@@ -7,17 +7,21 @@ from scrapers.data_keys import BOOL_VALUES
 logger = logging
 
 
-def process_date_type1(date, default):
+def process_date_type1(date, default, n_a):
     """
     Converts a date string from '02.08.1993' to '02-08-1993'
 
     Args:
+    :param n_a: not available sign
     :param date: %d.%m.%y formatted date
     :param default: retrun this value ins case of conversion is failed
 
     Returns:
     :return: %d-%m-%y formatted date, default if conversion failed.
     """
+    if n_a == date:
+        return default
+
     try:
         rdate = datetime.strptime(date, '%d.%m.%Y').strftime('%d-%m-%Y')
     except ValueError:
@@ -27,17 +31,21 @@ def process_date_type1(date, default):
     return rdate
 
 
-def process_date_type2(date, default):
+def process_date_type2(date, default, n_a):
     """
     Converts a date string from 'Dec. 27, 2015' or 'December 27, 2015' to '27-12-2015'
 
     Args:
     :param date: %B %d, %Y or %b. %d, %Y format (e.g. March 24, 2018)
     :param default: retrun this value ins case of conversion is failed
+    :param n_a: not available sign
 
     Returns:
     :return: %d-%m-%y formated date, default if conversion failed.
     """
+
+    if n_a == date:
+        return default
 
     try:
         rdate = datetime.strptime(date, '%B %d, %Y').strftime('%d-%m-%Y')
@@ -47,6 +55,31 @@ def process_date_type2(date, default):
         except ValueError:
             logging.warning('Could not format date from {} string'.format(date))
             return default
+
+    return rdate
+
+
+def process_date_type3(date, default, n_a):
+    """
+    Converts a date string from '02 August 1993'
+
+    Args:
+    :param date: %d %B %Y format
+    :param default: return this value ins case of conversion is failed
+    :param n_a: not available sign
+
+    Returns:
+    :return: %d-%m-%y formatted date, default if conversion failed.
+    """
+
+    if n_a == date:
+        return default
+
+    try:
+        rdate = datetime.strptime(date, '%d %B %Y').strftime('%d-%m-%Y')
+    except ValueError:
+        logging.warning('Could not format date from {} string'.format(date))
+        return default
 
     return rdate
 
@@ -107,7 +140,7 @@ def process_country_names(data, country_keys, keep_unconverted=True, default_val
 def __data_len(dct, n_a):
     """ Get number of true* data in dict """
     i = 0
-    for _, val in dct.items:
+    for _, val in dct.items():
         if val != n_a:
             i += 1
 

@@ -17,9 +17,6 @@ class IcoBazaar(ScraperBase):
 
         super(IcoBazaar, self).__init__(max_threads, max_browsers)
 
-        # should be 'selenium' or 'bs4'
-        self.engine = 'selenium'
-
         # should be 'firefox', 'chrome' or 'phantomjs'(headless)
         self.browser_name = 'firefox'
 

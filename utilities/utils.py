@@ -210,7 +210,7 @@ def load_page_as_text(url):
     req = urllib3.PoolManager(10, headers=user_agent)
 
     try:
-        html = req.urlopen('GET', url, timeout=10)
+        html = req.urlopen('GET', url, timeout=15)
     except urllib3.exceptions.MaxRetryError:
         raise Exception('Timout error while requesting: {}'.format(url))
 
@@ -237,11 +237,11 @@ def load_page(url, parser):
 def load_page_via_proxies_as_text(url, proxy):
     proxy_prop = proxy.split(':')
 
-    header = make_headers(user_agent=ua.random)#, proxy_basic_auth=proxy_prop[2] + ':' + proxy_prop[3])
+    header = make_headers(user_agent=ua.random)  # , proxy_basic_auth=proxy_prop[2] + ':' + proxy_prop[3])
     req = urllib3.ProxyManager('https://' + proxy_prop[0] + ':' + proxy_prop[1], headers=header)
 
     try:
-        html = req.urlopen('GET', url, timeout=5)
+        html = req.urlopen('GET', url, timeout=15)
     except urllib3.exceptions.MaxRetryError:
         print('Bad proxie {}'.format(proxy))
         raise Exception('Timout error while requesting: {}'.format(url))

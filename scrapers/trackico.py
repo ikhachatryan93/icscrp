@@ -186,9 +186,14 @@ class TrackIco(ScraperBase):
     @staticmethod
     def process(data):
         data[DataKeys.ICO_START] = processor.process_date_type2(data[DataKeys.ICO_START],
-                                                                default=data[DataKeys.ICO_START])
-        data[DataKeys.ICO_END] = processor.process_date_type2(data[DataKeys.ICO_END], default=data[DataKeys.ICO_END])
+                                                                default=data[DataKeys.ICO_START],
+                                                                n_a=BOOL_VALUES.NOT_AVAILABLE)
+        data[DataKeys.ICO_END] = processor.process_date_type2(data[DataKeys.ICO_END],
+                                                              default=data[DataKeys.ICO_END],
+                                                              n_a=BOOL_VALUES.NOT_AVAILABLE)
         data[DataKeys.PRE_ICO_START] = processor.process_date_type2(data[DataKeys.PRE_ICO_START],
-                                                                    default=data[DataKeys.PRE_ICO_START])
+                                                                    default=data[DataKeys.PRE_ICO_START],
+                                                                    n_a=BOOL_VALUES.NOT_AVAILABLE)
         data[DataKeys.PRE_ICO_END] = processor.process_date_type2(data[DataKeys.PRE_ICO_END],
-                                                                  default=data[DataKeys.PRE_ICO_END])
+                                                                  default=data[DataKeys.PRE_ICO_END],
+                                                                  n_a=BOOL_VALUES.NOT_AVAILABLE)

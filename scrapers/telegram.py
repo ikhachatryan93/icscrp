@@ -9,7 +9,7 @@ from scrapers.data_keys import DataKeys
 
 # TODO: add config file for this attrs
 __html_parser = 'lxml'
-__max_threads = 1
+__max_threads = 20
 __logger = logging
 __mutex = Lock()
 __n_a = None
@@ -23,7 +23,6 @@ def scrape_info(d):
 
     if url == __n_a:
         return
-
 
     try:
         bs = load_page(url, __html_parser)
@@ -41,7 +40,7 @@ def scrape_info(d):
     except ValueError:
         __logger.CRITICAL('Could not convert telegram users count to number: {}'.format(url))
     except (AttributeError, ValueError):
-        __logger.warning('Could not find telegram users count: {}'.format(url))
+        __logger.info('Could not find telegram users count: {}'.format(url))
 
 
 def extract_telegram_info(data: list, n_a):

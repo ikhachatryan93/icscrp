@@ -97,7 +97,7 @@ class IcoRating(ScraperBase):
                                               'NA': BOOL_VALUES.NOT_AVAILABLE}
                         rating = investment_ratings[value.upper()]
                         if rating:
-                            data[DataKeys.INVESTMENT_RATING] = rating
+                            data[DataKeys.ROI_SCORE] = rating
         except:
             self.logger.warning('Exception while scraping {} from {}'.format('rating info', url))
 
@@ -159,13 +159,21 @@ class IcoRating(ScraperBase):
         except:
             self.logger.error(self.NOT_FOUND_MSG.format(url + '/details', 'info table'))
 
-        IcoRating.process(data)
+        process(data)
 
         return data
 
-    @staticmethod
-    def process(data):
-        data[DataKeys.ICO_START] = processor.process_date_type1(data[DataKeys.ICO_START], default=data[DataKeys.ICO_START])
-        data[DataKeys.ICO_END] = processor.process_date_type1(data[DataKeys.ICO_END], default=data[DataKeys.ICO_END])
-        data[DataKeys.PRE_ICO_START] = processor.process_date_type1(data[DataKeys.PRE_ICO_START], default=data[DataKeys.PRE_ICO_START])
-        data[DataKeys.PRE_ICO_END] = processor.process_date_type1(data[DataKeys.PRE_ICO_END], default=data[DataKeys.PRE_ICO_END])
+
+def process(data):
+    data[DataKeys.ICO_START] = processor.process_date_type1(data[DataKeys.ICO_START],
+                                                            default=data[DataKeys.ICO_START],
+                                                            n_a=BOOL_VALUES.NOT_AVAILABLE)
+    data[DataKeys.ICO_END] = processor.process_date_type1(data[DataKeys.ICO_END],
+                                                          default=data[DataKeys.ICO_END],
+                                                          n_a=BOOL_VALUES.NOT_AVAILABLE)
+    data[DataKeys.PRE_ICO_START] = processor.process_date_type1(data[DataKeys.PRE_ICO_START],
+                                                                default=data[DataKeys.PRE_ICO_START],
+                                                                n_a=BOOL_VALUES.NOT_AVAILABLE)
+    data[DataKeys.PRE_ICO_END] = processor.process_date_type1(data[DataKeys.PRE_ICO_END],
+                                                              default=data[DataKeys.PRE_ICO_END],
+                                                              n_a=BOOL_VALUES.NOT_AVAILABLE)

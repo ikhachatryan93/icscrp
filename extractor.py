@@ -65,19 +65,19 @@ def main():
     # except:
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
-    try:
-        scraper = IcoMarks(Configs.get('max_threads'))
-        data += scraper.scrape_website()
-        # write_to_csv("icomarks.csv", data)
-    except:
-        logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
-
     # try:
-    #     scraper = TokenTops(Configs.get('max_threads'))
+    #     scraper = IcoMarks(Configs.get('max_threads'))
     #     data += scraper.scrape_website()
-    #     # write_to_csv("tokentops.csv", data)
+    #     # write_to_csv("icomarks.csv", data)
     # except:
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+
+    try:
+        scraper = TokenTops(Configs.get('max_threads'))
+        data += scraper.scrape_website()
+        write_to_csv("tokentops.csv", data)
+    except:
+        logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
     #
     # try:
     #     scraper = IcoBazaar(Configs.get('max_threads'))
@@ -111,22 +111,22 @@ def main():
     final_data = []
     try:
         data = Telegram.extract_telegram_info(data, BOOL_VALUES.NOT_AVAILABLE)
-        data = Bitcointalk.extract_bitcointalk(data)
+        # data = Bitcointalk.extract_bitcointalk(data)
 
-        # DataProcessor.process_country_names(data, [DataKeys.COUNTRY, DataKeys.COUNTRIES_RESTRICTED],
-        #                                     keep_unconverted=True, default_value=BOOL_VALUES.NOT_AVAILABLE,
-        #                                     words_unspecified=['UNSPECIFIED'])
-        # DataProcessor.merge_conflicts(data=data,
-        #                               eq_keys=[DataKeys.NAME, DataKeys.TOKEN_NAME],
-        #                               priority_key=DataKeys.SOURCE,
-        #                               # TODO: define best priority
-        #                               priority_table={SOURCES.ICOBENCH: 0,
-        #                                               SOURCES.ICOMARKS: 1,
-        #                                               SOURCES.ICODROPS: 2,
-        #                                               SOURCES.TOKENTOPS: 3,
-        #                                               SOURCES.TRACKICO: 4,
-        #                                               SOURCES.ICORATING: 5},
-        #                               n_a=BOOL_VALUES.NOT_AVAILABLE)
+        DataProcessor.process_country_names(data, [DataKeys.COUNTRY, DataKeys.COUNTRIES_RESTRICTED],
+                                            keep_unconverted=True, default_value=BOOL_VALUES.NOT_AVAILABLE,
+                                            words_unspecified=['UNSPECIFIED'])
+        DataProcessor.merge_conflicts(data=data,
+                                      eq_keys=[DataKeys.NAME, DataKeys.TOKEN_NAME],
+                                      priority_key=DataKeys.SOURCE,
+                                      # TODO: define best priority
+                                      priority_table={SOURCES.ICOBENCH: 0,
+                                                      SOURCES.ICOMARKS: 1,
+                                                      SOURCES.ICODROPS: 2,
+                                                      SOURCES.TOKENTOPS: 3,
+                                                      SOURCES.TRACKICO: 4,
+                                                      SOURCES.ICORATING: 5},
+                                      n_a=BOOL_VALUES.NOT_AVAILABLE)
 
     except:
         logging.error('Processor failed: \n {}'.format(traceback.format_exc()))

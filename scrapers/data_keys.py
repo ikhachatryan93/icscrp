@@ -92,9 +92,6 @@ class DataKeys:
     # scores
     OVERALL_SCORES = 'website_overall_rating'
 
-    # scores and ratings
-    INVESTMENT_RATING = 'investment_score'
-
     # icodrops
     ROI_SCORE = 'roi_score'
 

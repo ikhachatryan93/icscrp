@@ -18,7 +18,6 @@ from utilities.utils import setup_browser
 __html_parser = 'html5lib'
 __max_threads = 10
 __mutex = Lock()
-__driver = setup_browser('phantomjs')
 __logger = logging
 __proxies = get_paied_proxies()
 __pr_len = len(__proxies)

@@ -163,7 +163,7 @@ class IcoBench(ScraperBase):
             key = data_mapping.get(label.upper())
             try:
                 data[key] = str(div.contents[0]).strip()
-            except int:
+            except AttributeError:
                 data[key] = BOOL_VALUES.NOT_AVAILABLE
 
         rate_div = bs.find('div', {'itemprop': 'ratingValue'})

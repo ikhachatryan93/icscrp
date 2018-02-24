@@ -9,12 +9,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from scrapers.base_scraper import ScraperBase
 from scrapers.data_keys import DataKeys
 from scrapers.data_keys import SOURCES
+from scrapers.data_keys import BOOL_VALUES
 
 from utilities.utils import click
 from utilities.utils import load_page
 from utilities.utils import setup_browser
 
 from urllib.request import urljoin
+from scrapers.dataprocessor import process_date_type3
 
 
 class TokenTops(ScraperBase):
@@ -30,7 +32,7 @@ class TokenTops(ScraperBase):
         self.browser_name = 'firefox'
 
         # should be 'html5lib', 'lxml' or 'html.parser'
-        self.html_parser = 'lxml'
+        self.html_parser = 'html5lib'
 
         self.mutex = Lock()
 
@@ -56,7 +58,7 @@ class TokenTops(ScraperBase):
                 for e in elements:
                     urls.append(e.get_attribute('href'))
                 next_ = wait.until(EC.presence_of_element_located(
-                    (By.XPATH, ('//a[contains(text(), "»") and @class="pagination__link"]'))))
+                    (By.XPATH, '//a[contains(text(), "»") and @class="pagination__link"]')))
                 if next_:
                     click(driver, next_)
                 else:
@@ -70,6 +72,8 @@ class TokenTops(ScraperBase):
         # urls = []
         # for tag in tags:
         #     urls.append(tag['href'])
+
+        driver.quit()
 
         return urls
 
@@ -87,23 +91,23 @@ class TokenTops(ScraperBase):
         # name
         try:
             data[DataKeys.NAME] = bs.find('h1', {'class': 'page-details__title'}).text.strip()
-        except:
+        except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO name'))
 
         # logo
         try:
             logo_path = bs.find('img', {'class': 'page-details__logo'})['src']
             data[DataKeys.LOGO_URL] = urljoin(self.domain, logo_path)
-        except:
+        except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO logo'))
 
         # overall scores
         try:
             score = bs.find('div', {'class': 'rating_block'}).find('span', {'class': 'rating-text'}).text.strip()
-            if score != 0:
+            if score != '0':
                 data[DataKeys.OVERALL_SCORES] = score
-        except:
-            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO logo'))
+        except (AttributeError, ValueError):
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Overall score'))
 
         # social links
         soc_mapping = {'Facebook': DataKeys.FACEBOOK_URL, 'Github': DataKeys.GITHUB_URL,
@@ -121,7 +125,7 @@ class TokenTops(ScraperBase):
                     if target and target.has_attr('href'):
                         data[soc_mapping[key]] = target['href']
         except:
-            self.logger.error('Someting went wrong in {}, when scraping social links'.format(url))
+            self.logger.error('Something went wrong in {}, when scraping social links'.format(url))
 
         # details
         details_mapping = {'START DATE': DataKeys.ICO_START, 'CLOSE DATE': DataKeys.ICO_END,
@@ -136,7 +140,7 @@ class TokenTops(ScraperBase):
                     if value:
                         data[details_mapping[title.text.strip().upper()]] = value.text.strip()
         except:
-            self.logger.error('Someting went wrong in {}, when scraping detail rows'.format(url))
+            self.logger.error('Something went wrong in {}, when scraping detail rows'.format(url))
 
         # description
         try:
@@ -173,4 +177,20 @@ class TokenTops(ScraperBase):
         except:
             pass
 
+        process(data)
         return data
+
+
+def process(data):
+    data[DataKeys.ICO_START] = process_date_type3(data[DataKeys.ICO_START],
+                                                  default=data[DataKeys.ICO_START],
+                                                  n_a=BOOL_VALUES.NOT_AVAILABLE)
+    data[DataKeys.ICO_END] = process_date_type3(data[DataKeys.ICO_END],
+                                                default=data[DataKeys.ICO_END],
+                                                n_a=BOOL_VALUES.NOT_AVAILABLE)
+    data[DataKeys.PRE_ICO_START] = process_date_type3(data[DataKeys.PRE_ICO_START],
+                                                      default=data[DataKeys.PRE_ICO_START],
+                                                      n_a=BOOL_VALUES.NOT_AVAILABLE)
+    data[DataKeys.PRE_ICO_END] = process_date_type3(data[DataKeys.PRE_ICO_END],
+                                                    default=data[DataKeys.PRE_ICO_END],
+                                                    n_a=BOOL_VALUES.NOT_AVAILABLE)

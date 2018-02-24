@@ -23,7 +23,6 @@ class ScraperBase:
         self.engine = NotImplemented
 
         self.urls = NotImplemented
-        self.drivers = []
 
         # self.ico_profiles = []
         self.mutex = Lock()
@@ -49,21 +48,12 @@ class ScraperBase:
     def scrape_profile(self, url):
         raise NotImplementedError('scrap_profile not implemented yet')
 
-    @staticmethod
-    def process(url):
-        raise NotImplementedError('scrap_profile not implemented yet')
-
     def scrape_profiles(self, pages):
-        if self.engine == 'selenium':
-            self.initialize_browsers()
-
         logging.info("Scraping profiles from {}".format(self.domain))
         pool = ThreadPool(self.max_threads)
         profile_datas = list(tqdm.tqdm(pool.imap(self.scrape_profile, pages), total=len(pages)))
         pool.close()
         pool.join()
-
-        self.release_browsers()
         return profile_datas
 
     def scrape_website(self):
