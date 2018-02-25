@@ -19,7 +19,7 @@ def process_date_type1(date, default, n_a):
     Returns:
     :return: %d-%m-%y formatted date, default if conversion failed.
     """
-    if n_a == date:
+    if date in n_a:
         return default
 
     try:
@@ -44,8 +44,11 @@ def process_date_type2(date, default, n_a):
     :return: %d-%m-%y formated date, default if conversion failed.
     """
 
-    if n_a == date:
+    if date in n_a:
         return default
+
+    # special cases
+    date = date.replace('Sept', 'Sep')
 
     try:
         rdate = datetime.strptime(date, '%B %d, %Y').strftime('%d-%m-%Y')
@@ -72,7 +75,7 @@ def process_date_type3(date, default, n_a):
     :return: %d-%m-%y formatted date, default if conversion failed.
     """
 
-    if n_a == date:
+    if date in n_a:
         return default
 
     try:

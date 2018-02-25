@@ -6,6 +6,7 @@ import tqdm
 from multiprocessing.pool import ThreadPool
 from urllib.request import URLError
 from urllib.request import urljoin
+from multiprocessing.dummy import Lock
 
 from utilities.utils import load_page
 
@@ -13,26 +14,28 @@ from scrapers.data_keys import DataKeys
 from scrapers.data_keys import SOURCES
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.base_scraper import ScraperBase
+from utilities.proxy_generator import get_paied_proxies
+from utilities.utils import load_page_via_proxies
 
 import scrapers.dataprocessor as processor
 
 
 class TrackIco(ScraperBase):
+
     def __init__(self, max_threads=1, max_browsers=0, ):
 
         super(TrackIco, self).__init__(max_threads, max_browsers)
 
-        # should be 'selenium' or 'bs4'
-        # TODO: add scrapy support
-        self.engine = 'bs4'
+        self.__mutex = Lock()
+        self.__proxies = get_paied_proxies()
+        self.__pr_len = len(self.__proxies)
+        self.__proxy_id = 0
 
-        # should be 'firefox', 'chrome' or 'phantomjs'(headless)
+    # should be 'firefox', 'chrome' or 'phantomjs'(headless)
         self.browser_name = None
 
         # should be 'html5lib', 'lxml' or 'html.parser'
         self.html_parser = 'html5lib'
-
-        self.drivers = []
 
         self.NOT_FOUND_MSG = "From {}: could not find {}"
 
@@ -42,13 +45,26 @@ class TrackIco(ScraperBase):
 
     def scrape_listings_from_page(self, url):
         # next page url from 'Next 'pagination tag
+
+        ip = self.__proxies[self.__proxy_id % self.__pr_len]
+        with self.__mutex:
+            self.__proxy_id += 1
+
+        if self.__proxy_id > 1000000:
+            with self.__mutex:
+                self.__proxy_id = 0
         try:
-            bs = load_page(url, self.html_parser)
+            bs = load_page_via_proxies(url, self.html_parser, ip)
         except:
             self.logger.error('Error while scraping listings from %s', url)
             return
 
-        listings = bs.find('div', {'class': 'row equal-height'}).find_all('a')
+        try:
+            listings = bs.find('div', {'class': 'row equal-height'}).find_all('a')
+        except AttributeError:
+            self.logger.critical('Error while scraping listings from %s', url)
+            return
+
         listings_urls = []
         for i in listings:
             listings_urls.append(self.urls[0] + i['href'])
@@ -78,7 +94,8 @@ class TrackIco(ScraperBase):
         pages_urls = [url]
 
         listings_count = int(
-            bs.find('span', {'class': 'flex-grow text-right text-lighter pr-2'}).text.split('of')[1].strip())
+            bs.find('span', {'class': 'flex-grow text-right text-lighter pr-2'}).text.split('of')[1].strip()
+        )
         pages_count = int(math.ceil(listings_count / 24))  # because there is 24 listings in every page
 
         for i in range(2, pages_count + 1):
@@ -92,8 +109,17 @@ class TrackIco(ScraperBase):
         data[DataKeys.PROFILE_URL] = url
         data[DataKeys.SOURCE] = SOURCES.TRACKICO
 
+        ip = self.__proxies[self.__proxy_id % self.__pr_len]
+        with self.__mutex:
+            self.__proxy_id += 1
+
+        if self.__proxy_id > 1000000:
+            with self.__mutex:
+                self.__proxy_id = 0
+
         try:
-            bs = load_page(url, self.html_parser)
+            #bs = load_page(url, self.html_parser)
+            bs = load_page_via_proxies(url, self.html_parser, proxy=ip)
         except:
             self.logger.warning('Could not scrape profile {}'.format(url))
             return
@@ -131,26 +157,24 @@ class TrackIco(ScraperBase):
             ico_dates = bs.find('span', {'class': 'fa fa-calendar fs-30'}).findNextSibling('span').text
             data[DataKeys.ICO_START] = ico_dates.split('-')[0].strip()
             data[DataKeys.ICO_END] = ico_dates.split('-')[1].strip()
-
         except:
             self.logger.info(self.NOT_FOUND_MSG.format(url, 'ICO dates'))
 
         try:
-            data[DataKeys.COUNTRY] = bs.find('span', {'class': 'fa fa-globe fs-30'}).findNextSibling(
-                'span').text.strip()
+            data[DataKeys.COUNTRY] = bs.find('span', {'class': 'fa fa-globe fs-30'}).findNextSibling( 'span').text.strip()
         except:
-            self.logger.info(self.NOT_FOUND_MSG.format(url, 'ICO country'))
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO country'))
 
         try:
             data[DataKeys.PLATFORM] = bs.find('span', {'class': 'fa fa-server fs-30'}).findNextSibling('span').text
         except:
-            self.logger.info(self.NOT_FOUND_MSG.format(url, 'ICO platform'))
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO platform'))
 
         try:
             data[DataKeys.OVERALL_SCORES] = bs.find('span', {'class': 'fa fa-heart fs-30'}).findNextSibling(
                 'span').find('strong').text
         except:
-            self.logger.info(self.NOT_FOUND_MSG.format(url, 'ICO Rating'))
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO Rating'))
 
         # getting social pages
         # TODO: maybe will be necessary to add other community types
@@ -163,19 +187,19 @@ class TrackIco(ScraperBase):
         try:
             social_pages = bs.find('div', {'class': 'card card-body text-center'}).find_all('a')
             for page in social_pages:
-                try:
-                    if re.sub('[^\w]', '', page['onclick'].split('link-')[1]) != 'whitepaper':
+                if re.sub('[^\w]', '', page['onclick'].split('link-')[1]) != 'whitepaper':
+                    try:
                         key = map_[re.sub('[^\w]', '', page['onclick'].split('link-')[1]).strip()]
-                        try:
-                            value = page['href'].strip()
-                            data[key] = value
-                        except:
-                            self.logger.error('No url for {} social page'.format(key))
-                    else:
+                    except KeyError:
                         continue
-                except:
-                    self.logger.info('Unsupported Community type for scrapping --> {} '.format(
-                        re.sub('[^\w]', '', page['onclick'].split('link-')[1])))
+
+                    try:
+                        value = page['href'].strip()
+                        data[key] = value
+                    except AttributeError:
+                        self.logger.warning('No url for {} social page'.format(key))
+                else:
+                    continue
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Social pages'))
 
@@ -187,13 +211,13 @@ class TrackIco(ScraperBase):
     def process(data):
         data[DataKeys.ICO_START] = processor.process_date_type2(data[DataKeys.ICO_START],
                                                                 default=data[DataKeys.ICO_START],
-                                                                n_a=BOOL_VALUES.NOT_AVAILABLE)
+                                                                n_a='Unspecified ' + BOOL_VALUES.NOT_AVAILABLE)
         data[DataKeys.ICO_END] = processor.process_date_type2(data[DataKeys.ICO_END],
                                                               default=data[DataKeys.ICO_END],
-                                                              n_a=BOOL_VALUES.NOT_AVAILABLE)
+                                                              n_a='Unspecified' + BOOL_VALUES.NOT_AVAILABLE)
         data[DataKeys.PRE_ICO_START] = processor.process_date_type2(data[DataKeys.PRE_ICO_START],
                                                                     default=data[DataKeys.PRE_ICO_START],
-                                                                    n_a=BOOL_VALUES.NOT_AVAILABLE)
+                                                                    n_a='Unspecified' + BOOL_VALUES.NOT_AVAILABLE)
         data[DataKeys.PRE_ICO_END] = processor.process_date_type2(data[DataKeys.PRE_ICO_END],
                                                                   default=data[DataKeys.PRE_ICO_END],
-                                                                  n_a=BOOL_VALUES.NOT_AVAILABLE)
+                                                                  n_a='Unspecified' + BOOL_VALUES.NOT_AVAILABLE)

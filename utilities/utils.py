@@ -3,12 +3,14 @@ import json
 import os
 import platform
 import sys
+import re
 from urllib.parse import urlsplit
 
 import bs4
 import urllib3
 from configobj import ConfigObj, flatten_errors
 from fake_useragent import UserAgent
+from user_agents import parse
 from openpyxl import Workbook
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
@@ -172,7 +174,7 @@ def write_json_file(name, data):
 def write_to_excel(xlsx_file, dict_list=None, sheet_title_1=None):
     if dict_list is None:
         dict_list = []
-        logging.warning('Warning: No data was available for writing into the worksheet {}'.format(sheet_title_1))
+        print('Warning: No data was available for writing into the worksheet {}'.format(sheet_title_1))
 
     wb = Workbook(write_only=False)
     wb.guess_types = True
@@ -205,14 +207,34 @@ def load_page_with_selenium(url, parser):
     return bs
 
 
-def load_page_as_text(url):
-    user_agent = {'user-agent': ua.random}
+def rand_user_agnet():
+    u = ua.random
+    pu = parse(u)
+
+    i = 0
+    while not pu.is_pc or pu.is_bot:
+        i += 1
+        u = ua.random
+        pu = parse(u)
+        if i > 1000:
+            raise Exception('Too much bad user agents')
+
+    return u
+
+
+def load_page_as_text(url, rec=True):
+    user_agent = {'user-agent': rand_user_agnet()}
     req = urllib3.PoolManager(10, headers=user_agent)
 
     try:
         html = req.urlopen('GET', url, timeout=15)
+        if html.status != 200:
+            if rec:
+                return load_page_as_text(url, rec=False)
+            print('Bad status {}, retrying'.format(url))
+            raise Exception('Bad request status from: {}'.format(url))
     except urllib3.exceptions.MaxRetryError:
-        raise Exception('Timout error while requesting: {}'.format(url))
+        raise Exception('Timeout error while requesting: {}'.format(url))
 
     content_type = html.headers.get('Content-Type')
     if not content_type:
@@ -234,17 +256,23 @@ def load_page(url, parser):
     return bs4.BeautifulSoup(html_content, parser)
 
 
-def load_page_via_proxies_as_text(url, proxy):
+def load_page_via_proxies_as_text(url, proxy, rec=True):
     proxy_prop = proxy.split(':')
 
-    header = make_headers(user_agent=ua.random)  # , proxy_basic_auth=proxy_prop[2] + ':' + proxy_prop[3])
+    header = make_headers(user_agent=rand_user_agnet())  # , proxy_basic_auth=proxy_prop[2] + ':' + proxy_prop[3])
     req = urllib3.ProxyManager('https://' + proxy_prop[0] + ':' + proxy_prop[1], headers=header)
 
     try:
         html = req.urlopen('GET', url, timeout=15)
+        if html.status != 200:
+            if rec:
+                # print('Bad status {}, retrying'.format(url))
+                return load_page_as_text(url, rec=False)
+            print('Bad status {}, retrying'.format(url))
+            raise Exception('Bad request status from: {}'.format(url))
     except urllib3.exceptions.MaxRetryError:
-        print('Bad proxie {}'.format(proxy))
-        raise Exception('Timout error while requesting: {}'.format(url))
+        print('Bad proxies {}'.format(proxy))
+        raise Exception('Timeout error while requesting: {}'.format(url))
 
     content_type = html.headers.get('Content-Type')
     if not content_type:

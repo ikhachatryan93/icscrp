@@ -14,3 +14,4 @@ utilities/drivers/phantomjs-2.1.1-windows/ChangeLog
 *.xls
 *.xls
 trackico.xls
+*.html

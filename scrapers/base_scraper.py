@@ -33,15 +33,6 @@ class ScraperBase:
 
         self.domain = ''
 
-    def initialize_browsers(self):
-        if self.engine == 'selenium':
-            for _ in range(self.max_browsers):
-                self.drivers.append({'driver': setup_browser(), 'status': 'free'})
-
-    def release_browsers(self):
-        for browser in self.drivers:
-            browser["driver"].quit()
-
     def scrape_listings(self, url):
         raise NotImplementedError('scrap_listings not implemented yet')
 
