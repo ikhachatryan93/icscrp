@@ -231,7 +231,6 @@ def load_page_as_text(url, rec=True):
         if html.status != 200:
             if rec:
                 return load_page_as_text(url, rec=False)
-            print('Bad status {}, retrying'.format(url))
             raise Exception('Bad request status from: {}'.format(url))
     except urllib3.exceptions.MaxRetryError:
         raise Exception('Timeout error while requesting: {}'.format(url))
@@ -268,10 +267,8 @@ def load_page_via_proxies_as_text(url, proxy, rec=True):
             if rec:
                 # print('Bad status {}, retrying'.format(url))
                 return load_page_as_text(url, rec=False)
-            print('Bad status {}, retrying'.format(url))
             raise Exception('Bad request status from: {}'.format(url))
     except urllib3.exceptions.MaxRetryError:
-        print('Bad proxies {}'.format(proxy))
         raise Exception('Timeout error while requesting: {}'.format(url))
 
     content_type = html.headers.get('Content-Type')

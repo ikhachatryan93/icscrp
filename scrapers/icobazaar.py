@@ -2,13 +2,15 @@ import os
 import re
 import sys
 import time
+import logging
 from multiprocessing.dummy import Lock
 
 from scrapers.base_scraper import ScraperBase
 from scrapers.data_keys import DataKeys
 from scrapers.data_keys import SOURCES
-from utilities.utils import load_page
+from utilities.utils import load_page_via_proxies
 from utilities.utils import setup_browser
+from utilities.proxy_generator import get_paied_proxies
 
 
 class IcoBazaar(ScraperBase):
@@ -17,20 +19,19 @@ class IcoBazaar(ScraperBase):
 
         super(IcoBazaar, self).__init__(max_threads, max_browsers)
 
+        # TODO: Read from icobazaar.cnf config file
+        self.__max_threads = 1
+
+        self.__logger = logging
+        self.__proxies = get_paied_proxies()
+        self.__pr_len = len(self.__proxies)
+        self.__proxy_id = 0
+
         # should be 'firefox', 'chrome' or 'phantomjs'(headless)
-        self.browser_name = 'firefox'
+        self.__browser_name = 'firefox'
 
         # should be 'html5lib', 'lxml' or 'html.parser'
-        self.html_parser = 'lxml'
-
-        # should be 'file' or 'stream'
-        self.logger_type = 'stream'
-
-        self.drivers = []
-
-        self.mutex = Lock()
-
-        self.output_data = []
+        self.__html_parser = 'lxml'
 
         self.NOT_FOUND_MSG = "From {}: could not find {}"
 
@@ -40,7 +41,7 @@ class IcoBazaar(ScraperBase):
 
     def scrape_listings(self, url):
 
-        driver = setup_browser(self.browser_name)  # uwebdriver.Firefox(executable_path=r'drivers\geckodriver.exe') #???
+        driver = setup_browser(self.__browser_name)
 
         driver.get(self.urls[0])
         time.sleep(1)
@@ -64,30 +65,36 @@ class IcoBazaar(ScraperBase):
         data[DataKeys.SOURCE] = SOURCES.ICOBAZAAR
 
         try:
-            bs = load_page(url, self.html_parser)
+            ip = self.__proxies[self.__proxy_id % self.__pr_len]
+            with self.mutex:
+                self.__proxy_id += 1
+            if self.__proxy_id > 1000000:
+                with self.mutex:
+                    self.__proxy_id = 0
+            bs_ = load_page_via_proxies(url, 'lxml', ip)
         except:
             self.logger.error('Could not scrape profile {}'.format(url))
             return
 
-        # scrapping of besic data
+        # scrapping of basic data
         try:
-            data[DataKeys.NAME] = bs.find('div', {'class': 'com-header__info'}).find('h1').text
+            data[DataKeys.NAME] = bs_.find('div', {'class': 'com-header__info'}).find('h1').text
         except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO name'))
 
         try:
-            data[DataKeys.DESCRIPTION] = bs.find('div', {'class': 'com-header__info'}).find('p').text
+            data[DataKeys.DESCRIPTION] = bs_.find('div', {'class': 'com-header__info'}).find('p').text
         except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO description'))
 
         try:
-            data[DataKeys.LOGO_URL] = bs.find('div', {'class': 'com-header__logo'}).img['src'].strip()
+            data[DataKeys.LOGO_URL] = bs_.find('div', {'class': 'com-header__logo'}).img['src'].strip()
 
         except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO logo'))
 
         try:
-            data[DataKeys.OVERALL_SCORES] = bs.find('div', {'class': 'ico-rating'})['rating']
+            data[DataKeys.OVERALL_SCORES] = bs_.find('div', {'class': 'ico-rating'})['rating']
         except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'Rating'))
 
@@ -95,7 +102,7 @@ class IcoBazaar(ScraperBase):
                 'cap': DataKeys.HARD_CAP, 'goal': DataKeys.SOFT_CAP,
                 'price': DataKeys.ICO_PRICE}
         try:
-            for a in bs.find_all('div', {'class': 'com-sidebar__info-line'}):
+            for a in bs_.find_all('div', {'class': 'com-sidebar__info-line'}):
                 try:
                     key = map_[re.sub(':', '', a.find('span').text).strip().lower()]
                     try:
@@ -113,48 +120,51 @@ class IcoBazaar(ScraperBase):
             pass
 
         try:
-            data[DataKeys.WEBSITE] = bs.find('div', {'class': 'com-sidebar'}).find('a')['href']
+            data[DataKeys.WEBSITE] = bs_.find('div', {'class': 'com-sidebar'}).find('a')['href']
         except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO website'))
 
-        # scrap data from "community" tab of particular listing
-        try:
-            bs = load_page(url + '/community', self.html_parser)
-        except AttributeError:
-            self.logger.error('Could not scrape community of profile {}'.format(url))
+        # # scrap data from "community" tab of particular listing
+        # try:
+        #     ip = self.__proxies[self.__proxy_id % self.__pr_len]
+        #     with self.mutex:
+        #         self.__proxy_id += 1
+        #     if self.__proxy_id > 1000000:
+        #         with self.mutex:
+        #             self.__proxy_id = 0
+        #     bs__ = load_page_via_proxies(url + '/community', self.__html_parser, ip)
+        # except AttributeError:
+        #     self.logger.error('Could not scrape community of profile {}'.format(url))
+        #     return
 
-            # ----rating list
-        try:
-            rating_list = bs.find('div', {'class': 'com-rating__list'}).find_all('div',
-                                                                                 {'class': 'com-rating__list-element'})
-            for rate in rating_list:
-                if rate.find('span').text.lower() == 'team':
-                    data[DataKeys.TEAM_SCORE] = \
-                        re.findall('\d{1,3}\%', rate.find('div', {'class': 'progress-bar'}).find('span')['style'])[0]
-        except AttributeError:
-            self.logger.error(self.NOT_FOUND_MSG.format(url, 'Team'))
+        #     # ----rating list
+        # try:
+        #     rating_list = bs__.find('div', {'class': 'com-rating__list'}).find_all('div',
+        #                                                                          {'class': 'com-rating__list-element'})
+        #     for rate in rating_list:
+        #         if rate.find('span').text.lower() == 'team':
+        #             data[DataKeys.TEAM_SCORE] = \
+        #                 re.findall('\d{1,3}\%', rate.find('div', {'class': 'progress-bar'}).find('span')['style'])[0]
+        # except AttributeError:
+        #     self.logger.error(self.NOT_FOUND_MSG.format(url, 'Team'))
 
-        # getting social pages
-        # TODO: maybe will be necessary to add other community types
-        map_ = {'website': DataKeys.WEBSITE, 'bitcointalk': DataKeys.BITCOINTALK_URL,
-                'twitter': DataKeys.TWITTER_URL, 'facebook': DataKeys.FACEBOOK_URL,
-                'telegram': DataKeys.TELEGRAM_URL, 'github': DataKeys.GITHUB_URL,
-                'reddit': DataKeys.REDDIT_URL, 'linkedin': DataKeys.LINKEDIN_URL, 'slack': DataKeys.SLACK_URL}
-        try:
-            social_pages = bs.find('div', {'class': 'com-social'}).find_all('a')
-            for page in social_pages:
-                try:
-                    key = map_[page.find('i')['class'][1].split('-')[1].lower()]
-                    try:
-                        value = page['href'].strip()
-                        data[key] = value
-                    except AttributeError:
-                        self.logger.error('No url for {} social page'.format(key))
-                        pass
-                except AttributeError:
-                    self.logger.error('Unsupported Community type for scrapping --> {} '.format(
-                        page.find('i')['class'][1].split('-')[1]))
-                    pass
+        # # getting social pages
+        # # TODO: maybe will be necessary to add other community types
+        # map_ = {'website': DataKeys.WEBSITE, 'bitcointalk': DataKeys.BITCOINTALK_URL,
+        #         'twitter': DataKeys.TWITTER_URL, 'facebook': DataKeys.FACEBOOK_URL,
+        #         'telegram': DataKeys.TELEGRAM_URL, 'github': DataKeys.GITHUB_URL,
+        #         'reddit': DataKeys.REDDIT_URL, 'linkedin': DataKeys.LINKEDIN_URL, 'slack': DataKeys.SLACK_URL}
+        # try:
+        #     social_pages = bs__.find('div', {'class': 'com-social'}).find_all('a')
+        #     for page in social_pages:
+        #         try:
+        #             key = page.find('i')['class'][1].split('-')[1].lower()
+        #             if key in map_ and page.has_attr('href'):
+        #                 value = page['href'].strip()
+        #                 data[map_[key]] = value
+        #         except AttributeError:
+        #             self.logger.error('Unsupported Community type for scrapping --> {} '.format(
+        #                 page.find('i')['class'][1].split('-')[1]))
         except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'Social pages'))
 

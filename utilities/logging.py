@@ -15,5 +15,5 @@ def configure_logging(handler_type):
     logFormatter = logging.Formatter("%(filename)s:%(lineno)s %(asctime)s [%(levelname)-5.5s]  %(message)s")
     handler.setFormatter(logFormatter)
     logger.addHandler(handler)
-    logger.setLevel(logging.WARNING)
+    logger.setLevel(logging.INFO)
     logger.propagate = False

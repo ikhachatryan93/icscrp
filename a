@@ -1,0 +1,139 @@
+C:\Users\skhachat\AppData\Local\Programs\Python\Python36-32\python.exe C:/Users/skhachat/Documents/GitHub/icscrp/extractor.py
+base_scraper.py:53 2018-02-25 16:34:47,862 [INFO ]  Scraping data from https://www.trackico.io
+Scraping listings
+100%|██████████| 88/88 [00:17<00:00,  4.95it/s]
+base_scraper.py:43 2018-02-25 16:35:08,854 [INFO ]  Scraping profiles from https://www.trackico.io
+  0%|          | 0/100 [00:00<?, ?it/s]trackico.py:151 2018-02-25 16:35:11,250 [INFO ]  From https://www.trackico.io/ico/sphere-social-network/: could not find Pre ICO dates
+trackico.py:151 2018-02-25 16:35:11,839 [INFO ]  From https://www.trackico.io/ico/serenity/: could not find Pre ICO dates
+trackico.py:151 2018-02-25 16:35:12,079 [INFO ]  From https://www.trackico.io/ico/polyswarm/: could not find Pre ICO dates
+trackico.py:151 2018-02-25 16:35:12,224 [INFO ]  From https://www.trackico.io/ico/hycon/: could not find Pre ICO dates
+  6%|▌         | 6/100 [00:03<00:58,  1.61it/s]trackico.py:158 2018-02-25 16:35:13,826 [INFO ]  From https://www.trackico.io/ico/behaviourexchange/: could not find ICO dates
+ 23%|██▎       | 23/100 [00:05<00:17,  4.46it/s]trackico.py:151 2018-02-25 16:35:14,210 [INFO ]  From https://www.trackico.io/ico/valid/: could not find Pre ICO dates
+trackico.py:151 2018-02-25 16:35:14,258 [INFO ]  From https://www.trackico.io/ico/epocum/: could not find Pre ICO dates
+trackico.py:151 2018-02-25 16:35:14,891 [INFO ]  From https://www.trackico.io/ico/crypto-angel/: could not find Pre ICO dates
+trackico.py:151 2018-02-25 16:35:15,260 [INFO ]  From https://www.trackico.io/ico/pumped/: could not find Pre ICO dates
+trackico.py:158 2018-02-25 16:35:15,608 [INFO ]  From https://www.trackico.io/ico/crowdtoken/: could not find ICO dates
+ 24%|██▍       | 24/100 [00:06<00:21,  3.53it/s]trackico.py:158 2018-02-25 16:35:15,856 [INFO ]  From https://www.trackico.io/ico/otcrit/: could not find ICO dates
+ 43%|████▎     | 43/100 [00:07<00:09,  5.87it/s]trackico.py:151 2018-02-25 16:35:17,086 [INFO ]  From https://www.trackico.io/ico/traderly/: could not find Pre ICO dates
+ 46%|████▌     | 46/100 [00:08<00:09,  5.50it/s]trackico.py:151 2018-02-25 16:35:17,655 [INFO ]  From https://www.trackico.io/ico/attention-network/: could not find Pre ICO dates
+trackico.py:151 2018-02-25 16:35:18,628 [INFO ]  From https://www.trackico.io/ico/clinicoin/: could not find Pre ICO dates
+trackico.py:158 2018-02-25 16:35:19,069 [INFO ]  From https://www.trackico.io/ico/akaiito/: could not find ICO dates
+trackico.py:151 2018-02-25 16:35:19,462 [INFO ]  From https://www.trackico.io/ico/loyakk/: could not find Pre ICO dates
+trackico.py:151 2018-02-25 16:35:19,550 [INFO ]  From https://www.trackico.io/ico/ponder-gold/: could not find Pre ICO dates
+ 72%|███████▏  | 72/100 [00:12<00:04,  5.99it/s]trackico.py:158 2018-02-25 16:35:21,527 [INFO ]  From https://www.trackico.io/ico/smartrefer/: could not find ICO dates
+trackico.py:158 2018-02-25 16:35:21,630 [INFO ]  From https://www.trackico.io/ico/morpheus-network/: could not find ICO dates
+trackico.py:151 2018-02-25 16:35:22,294 [INFO ]  From https://www.trackico.io/ico/odem/: could not find Pre ICO dates
+trackico.py:151 2018-02-25 16:35:23,138 [INFO ]  From https://www.trackico.io/ico/etheera/: could not find Pre ICO dates
+trackico.py:158 2018-02-25 16:35:23,210 [INFO ]  From https://www.trackico.io/ico/playbets/: could not find ICO dates
+ 76%|███████▌  | 76/100 [00:14<00:04,  5.15it/s]trackico.py:151 2018-02-25 16:35:23,815 [INFO ]  From https://www.trackico.io/ico/taylor/: could not find Pre ICO dates
+trackico.py:151 2018-02-25 16:35:23,867 [INFO ]  From https://www.trackico.io/ico/te-food/: could not find Pre ICO dates
+ 83%|████████▎ | 83/100 [00:15<00:03,  5.51it/s]trackico.py:151 2018-02-25 16:35:24,107 [INFO ]  From https://www.trackico.io/ico/credits/: could not find Pre ICO dates
+ 95%|█████████▌| 95/100 [00:15<00:00,  6.23it/s]trackico.py:158 2018-02-25 16:35:24,264 [INFO ]  From https://www.trackico.io/ico/vectorzilla/: could not find ICO dates
+trackico.py:151 2018-02-25 16:35:24,460 [INFO ]  From https://www.trackico.io/ico/real-land/: could not find Pre ICO dates
+ 99%|█████████▉| 99/100 [00:16<00:00,  6.13it/s]trackico.py:151 2018-02-25 16:35:25,633 [INFO ]  From https://www.trackico.io/ico/lendroid/: could not find Pre ICO dates
+100%|██████████| 100/100 [00:16<00:00,  5.98it/s]
+reddit.py:113 2018-02-25 16:35:25,697 [INFO ]  Obtaining reddit information for GoHelpFund ico
+reddit.py:45 2018-02-25 16:35:32,213 [ERROR]  Unable to scrap profile for https://www.reddit.com/r/gohelpfund, after retrying 2 time, the reason: Bad request status from: https://www.reddit.com/r/gohelpfund
+reddit.py:113 2018-02-25 16:35:32,217 [INFO ]  Obtaining reddit information for Elementh ico
+100%|██████████| 23/23 [00:04<00:00,  4.80it/s]
+reddit.py:113 2018-02-25 16:35:41,879 [INFO ]  Obtaining reddit information for Crowd Machine ico
+100%|██████████| 12/12 [00:03<00:00,  3.93it/s]
+reddit.py:113 2018-02-25 16:35:50,046 [INFO ]  Obtaining reddit information for MoneyToken ico
+100%|██████████| 1/1 [00:02<00:00,  2.86s/it]
+reddit.py:113 2018-02-25 16:35:55,140 [INFO ]  Obtaining reddit information for Auctus ico
+100%|██████████| 11/11 [00:07<00:00,  1.47it/s]
+reddit.py:113 2018-02-25 16:36:08,377 [INFO ]  Obtaining reddit information for HYCON ico
+poolmanager.py:348 2018-02-25 16:36:08,817 [INFO ]  Redirecting https://reddit.com/r/HYCON -> https://www.reddit.com/r/HYCON
+poolmanager.py:348 2018-02-25 16:36:09,542 [INFO ]  Redirecting https://www.reddit.com/r/HYCON -> https://www.reddit.com/r/HYCON/
+  0%|          | 0/5 [00:00<?, ?it/s]reddit.py:74 2018-02-25 16:36:14,359 [CRITI]  Could not extract data from https://www.reddit.com/user/TeamHycon url, the reason is:Bad request status from: https://www.reddit.com/user/TeamHycon
+100%|██████████| 5/5 [00:03<00:00,  1.27it/s]
+reddit.py:113 2018-02-25 16:36:14,808 [INFO ]  Obtaining reddit information for Sphere Social Network ico
+poolmanager.py:348 2018-02-25 16:36:15,432 [INFO ]  Redirecting https://www.reddit.com/r/spheresocial/ -> https://www.reddit.com/r/SphereSocial/
+ 13%|█▎        | 9/67 [00:06<00:42,  1.37it/s]reddit.py:74 2018-02-25 16:36:31,108 [CRITI]  Could not extract data from https://www.reddit.com/user/daejo1234 url, the reason is:Bad request status from: https://www.reddit.com/user/daejo1234
+ 75%|███████▍  | 50/67 [00:08<00:02,  6.19it/s]reddit.py:74 2018-02-25 16:36:31,569 [CRITI]  Could not extract data from https://www.reddit.com/user/mashiulkarim url, the reason is:Bad request status from: https://www.reddit.com/user/mashiulkarim
+100%|██████████| 67/67 [00:10<00:00,  6.28it/s]
+reddit.py:113 2018-02-25 16:36:33,771 [INFO ]  Obtaining reddit information for Sp8de ico
+100%|██████████| 73/73 [00:12<00:00,  5.87it/s]
+reddit.py:113 2018-02-25 16:36:57,731 [INFO ]  Obtaining reddit information for AffiliateCoin ico
+poolmanager.py:348 2018-02-25 16:36:59,612 [INFO ]  Redirecting https://www.reddit.com/r/ethtrader/comments/7twe9x/affiliatecoin -> https://www.reddit.com/r/ethtrader/comments/7twe9x/affiliatecoin/
+reddit.py:113 2018-02-25 16:37:00,618 [INFO ]  Obtaining reddit information for Payfrit RMS ico
+poolmanager.py:348 2018-02-25 16:37:00,778 [INFO ]  Redirecting http://www.reddit.com/r/payfrit -> https://www.reddit.com/r/payfrit
+poolmanager.py:348 2018-02-25 16:37:01,250 [INFO ]  Redirecting https://www.reddit.com/r/payfrit -> https://www.reddit.com/r/payfrit/
+100%|██████████| 3/3 [00:02<00:00,  1.27it/s]
+reddit.py:113 2018-02-25 16:37:04,834 [INFO ]  Obtaining reddit information for Robotina ico
+100%|██████████| 2/2 [00:01<00:00,  1.03it/s]
+reddit.py:113 2018-02-25 16:37:08,109 [INFO ]  Obtaining reddit information for Sandblock ico
+100%|██████████| 2/2 [00:02<00:00,  1.39s/it]
+reddit.py:113 2018-02-25 16:37:12,661 [INFO ]  Obtaining reddit information for Bethereum ico
+poolmanager.py:348 2018-02-25 16:37:14,671 [INFO ]  Redirecting https://www.reddit.com/r/bethereum -> https://www.reddit.com/r/bethereum/
+100%|██████████| 1/1 [00:02<00:00,  2.20s/it]
+reddit.py:113 2018-02-25 16:37:17,915 [INFO ]  Obtaining reddit information for Otcrit ico
+100%|██████████| 5/5 [00:05<00:00,  1.09s/it]
+reddit.py:113 2018-02-25 16:37:25,438 [INFO ]  Obtaining reddit information for VALID ico
+100%|██████████| 5/5 [00:04<00:00,  1.24it/s]
+reddit.py:113 2018-02-25 16:37:32,572 [INFO ]  Obtaining reddit information for Jizzcoins ico
+  0%|          | 0/2 [00:00<?, ?it/s]reddit.py:102 2018-02-25 16:37:40,774 [ERROR]  Unable to get user post karma info for user [jizzxxx], retried 2 times
+100%|██████████| 2/2 [00:05<00:00,  2.93s/it]
+reddit.py:113 2018-02-25 16:37:40,809 [INFO ]  Obtaining reddit information for Hicky ico
+100%|██████████| 2/2 [00:01<00:00,  1.26it/s]
+reddit.py:113 2018-02-25 16:37:46,521 [INFO ]  Obtaining reddit information for TV-TWO ico
+100%|██████████| 3/3 [00:07<00:00,  2.43s/it]
+reddit.py:113 2018-02-25 16:37:58,574 [INFO ]  Obtaining reddit information for Sapien ico
+100%|██████████| 17/17 [00:04<00:00,  3.70it/s]
+reddit.py:113 2018-02-25 16:38:10,082 [INFO ]  Obtaining reddit information for GIF by SOCIFI ico
+100%|██████████| 2/2 [00:02<00:00,  1.00s/it]
+reddit.py:113 2018-02-25 16:38:14,350 [INFO ]  Obtaining reddit information for Dogezer ico
+100%|██████████| 13/13 [00:06<00:00,  1.94it/s]
+reddit.py:113 2018-02-25 16:38:22,467 [INFO ]  Obtaining reddit information for Swapy Network ico
+reddit.py:113 2018-02-25 16:38:23,945 [INFO ]  Obtaining reddit information for Traderly ico
+100%|██████████| 2/2 [00:01<00:00,  1.47it/s]
+reddit.py:113 2018-02-25 16:38:28,748 [INFO ]  Obtaining reddit information for Akaiito ico
+poolmanager.py:348 2018-02-25 16:38:28,928 [INFO ]  Redirecting http://www.reddit.com/r/Akaiito_Official -> https://www.reddit.com/r/Akaiito_Official
+poolmanager.py:348 2018-02-25 16:38:30,023 [INFO ]  Redirecting http://www.reddit.com/r/Akaiito_Official -> https://www.reddit.com/r/Akaiito_Official
+poolmanager.py:348 2018-02-25 16:38:32,011 [INFO ]  Redirecting http://www.reddit.com/r/Akaiito_Official -> https://www.reddit.com/r/Akaiito_Official
+poolmanager.py:348 2018-02-25 16:38:33,169 [INFO ]  Redirecting http://www.reddit.com/r/Akaiito_Official -> https://www.reddit.com/r/Akaiito_Official
+reddit.py:45 2018-02-25 16:38:37,214 [ERROR]  Unable to scrap profile for http://www.reddit.com/r/Akaiito_Official, after retrying 2 time, the reason: Bad request status from: http://www.reddit.com/r/Akaiito_Official
+reddit.py:113 2018-02-25 16:38:37,232 [INFO ]  Obtaining reddit information for Clinicoin ico
+poolmanager.py:348 2018-02-25 16:38:39,031 [INFO ]  Redirecting https://www.reddit.com/r/clinicoin -> https://www.reddit.com/r/Clinicoin/
+100%|██████████| 7/7 [00:04<00:00,  1.69it/s]
+reddit.py:113 2018-02-25 16:38:44,211 [INFO ]  Obtaining reddit information for Loyakk ico
+100%|██████████| 3/3 [00:05<00:00,  1.97s/it]
+reddit.py:113 2018-02-25 16:38:51,858 [INFO ]  Obtaining reddit information for Attention Network ico
+100%|██████████| 6/6 [00:03<00:00,  1.86it/s]
+reddit.py:113 2018-02-25 16:38:56,892 [INFO ]  Obtaining reddit information for Ponder Gold ico
+100%|██████████| 3/3 [00:08<00:00,  2.80s/it]
+reddit.py:113 2018-02-25 16:39:07,229 [INFO ]  Obtaining reddit information for Shping ico
+poolmanager.py:348 2018-02-25 16:39:09,151 [INFO ]  Redirecting https://www.reddit.com/r/ShpingCoin -> https://www.reddit.com/r/ShpingCoin/
+ 18%|█▊        | 2/11 [00:03<00:17,  1.95s/it]reddit.py:74 2018-02-25 16:39:25,386 [CRITI]  Could not extract data from https://www.reddit.com/user/viktorious49 url, the reason is:Bad request status from: https://www.reddit.com/user/viktorious49
+100%|██████████| 11/11 [00:10<00:00,  1.10it/s]
+reddit.py:113 2018-02-25 16:39:25,480 [INFO ]  Obtaining reddit information for On.Live ico
+poolmanager.py:348 2018-02-25 16:39:25,664 [INFO ]  Redirecting http://www.reddit.com/r/onlivetv -> https://www.reddit.com/r/onlivetv
+poolmanager.py:348 2018-02-25 16:39:26,351 [INFO ]  Redirecting https://www.reddit.com/r/onlivetv -> https://www.reddit.com/r/OnLiveTv/
+100%|██████████| 2/2 [00:01<00:00,  1.15it/s]
+reddit.py:113 2018-02-25 16:39:28,991 [INFO ]  Obtaining reddit information for MAVRO ico
+100%|██████████| 8/8 [00:03<00:00,  2.56it/s]
+reddit.py:113 2018-02-25 16:39:33,665 [INFO ]  Obtaining reddit information for Velix.ID ico
+ 60%|██████    | 9/15 [00:02<00:01,  3.24it/s]reddit.py:74 2018-02-25 16:39:45,564 [CRITI]  Could not extract data from https://www.reddit.com/user/viktorious49 url, the reason is:Bad request status from: https://www.reddit.com/user/viktorious49
+100%|██████████| 15/15 [00:06<00:00,  2.31it/s]
+reddit.py:113 2018-02-25 16:39:45,677 [INFO ]  Obtaining reddit information for CashBet ico
+100%|██████████| 1/1 [00:01<00:00,  1.73s/it]
+reddit.py:113 2018-02-25 16:39:49,314 [INFO ]  Obtaining reddit information for Morpheus Network ico
+100%|██████████| 9/9 [00:06<00:00,  1.46it/s]
+reddit.py:113 2018-02-25 16:39:59,502 [INFO ]  Obtaining reddit information for ODEM ico
+poolmanager.py:348 2018-02-25 16:39:59,674 [INFO ]  Redirecting http://www.reddit.com/r/ODEM/ -> https://www.reddit.com/r/ODEM/
+100%|██████████| 5/5 [00:05<00:00,  1.08s/it]
+reddit.py:113 2018-02-25 16:40:10,158 [INFO ]  Obtaining reddit information for Taylor ico
+100%|██████████| 8/8 [00:03<00:00,  2.51it/s]
+reddit.py:113 2018-02-25 16:40:17,299 [INFO ]  Obtaining reddit information for TE-FOOD ico
+100%|██████████| 14/14 [00:05<00:00,  2.37it/s]
+reddit.py:113 2018-02-25 16:40:27,114 [INFO ]  Obtaining reddit information for FarmaTrust ico
+poolmanager.py:348 2018-02-25 16:40:27,898 [INFO ]  Redirecting https://www.reddit.com/r/farmatrust -> https://www.reddit.com/r/FarmaTrust/
+100%|██████████| 4/4 [00:02<00:00,  1.86it/s]
+reddit.py:113 2018-02-25 16:40:31,298 [INFO ]  Obtaining reddit information for MoxyOne ico
+100%|██████████| 9/9 [00:03<00:00,  2.41it/s]
+reddit.py:113 2018-02-25 16:40:40,812 [INFO ]  Obtaining reddit information for Lympo ico
+100%|██████████| 28/28 [00:07<00:00,  3.55it/s]
+reddit.py:113 2018-02-25 16:41:04,941 [INFO ]  Obtaining reddit information for Lendroid ico
+100%|██████████| 2/2 [00:01<00:00,  1.02it/s]
+
+Process finished with exit code 0

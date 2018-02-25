@@ -47,6 +47,7 @@ def main():
     configure_logging(Configs.get('logging_handler'))
     parse_arguments()
 
+    data = []
     # try:
     #     scraper = IcoMarks(Configs.get('max_threads'))
     #     data = scraper.scrape_website()
@@ -54,8 +55,7 @@ def main():
     #     write_to_csv("icomarks.csv", data)
     # except:
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
-    #
-    # data = []
+
 
     # try:
     #     scraper = IcoBench(Configs.get('max_threads'))
@@ -81,7 +81,7 @@ def main():
     # try:
     #     scraper = IcoBazaar(Configs.get('max_threads'))
     #     data += scraper.scrape_website()
-    #     # write_to_csv("icobazaar.csv", data)
+    #     write_to_csv("icobazaar.csv", data)
     #     # write_to_excel('icobazaar.xlsx',dict_list=data)
     # except:
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
@@ -103,6 +103,7 @@ def main():
     try:
         scraper = TrackIco(Configs.get('max_threads'))
         data = scraper.scrape_website()
+        data = Reddit.exctract_reddit(data)
         write_to_excel('trackico.xls', dict_list=data)
     except:
         logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))

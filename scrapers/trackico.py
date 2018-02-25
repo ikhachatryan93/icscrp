@@ -128,21 +128,18 @@ class TrackIco(ScraperBase):
         # ICO NAME
         try:
             data[DataKeys.NAME] = header.find('h1').text
-
-        except:
+        except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO name'))
 
         # ICO Logo
         try:
             data[DataKeys.LOGO_URL] = header.img['src'].strip()
-
-        except:
+        except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO logo'))
 
         try:
             data[DataKeys.DESCRIPTION] = bs.find('small', {'class': 'subtitle'}).find('p').text.strip()
-
-        except:
+        except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO description'))
 
         try:
@@ -151,14 +148,14 @@ class TrackIco(ScraperBase):
             data[DataKeys.PRE_ICO_END] = pre_ico_dates.split('-')[1].strip()
 
         except:
-            self.logger.info(self.NOT_FOUND_MSG.format(url, 'Pre ICO dates'))
+            self.logger.debug(self.NOT_FOUND_MSG.format(url, 'Pre ICO dates'))
 
         try:
             ico_dates = bs.find('span', {'class': 'fa fa-calendar fs-30'}).findNextSibling('span').text
             data[DataKeys.ICO_START] = ico_dates.split('-')[0].strip()
             data[DataKeys.ICO_END] = ico_dates.split('-')[1].strip()
         except:
-            self.logger.info(self.NOT_FOUND_MSG.format(url, 'ICO dates'))
+            self.logger.debug(self.NOT_FOUND_MSG.format(url, 'ICO dates'))
 
         try:
             data[DataKeys.COUNTRY] = bs.find('span', {'class': 'fa fa-globe fs-30'}).findNextSibling( 'span').text.strip()

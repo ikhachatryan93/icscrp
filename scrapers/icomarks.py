@@ -37,7 +37,7 @@ class IcoMarks(ScraperBase):
         self.mutex = Lock()
 
         self.NOT_FOUND_MSG = "From {}: could not find {}"
-        self.max_pagination = 1
+        self.max_pagination = 10
 
         # location of listings in website, may be more than one
         self.urls = ['https://www.icomarks.com/icos?sort=rating-desc']
@@ -61,7 +61,7 @@ class IcoMarks(ScraperBase):
                 else:
                     break
         except:
-            pass
+            self.logger.debug('Could not click next pagin in {}'.format(url))
 
         listings = driver.find_elements_by_css_selector('.icoListItem__title')
         urls = []

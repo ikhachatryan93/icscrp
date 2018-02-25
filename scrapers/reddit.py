@@ -25,21 +25,27 @@ class Reddit:
     max_threads = 20
 
     @staticmethod
-    def scrape_listings(url):
+    def scrape_listings(url, rec=True):
 
-        next_page_url = 1
+        next_page_url = ''
         post_count = 0
         user_list = []
         comment_count = 0
 
-        while next_page_url != 0:
-            if '/r/' in url:
-                try:
-                    bs = load_page(url, Reddit.html_parser)
-                except (AttributeError, TypeError):
-                    logging.error(traceback.format_exc())
-                    logging.error('Unable to scrap profile for {}'.format(url))
+        if '/r/' not in url:
+            return post_count, comment_count, user_list
 
+        while True:
+            try:
+                bs = load_page(url, Reddit.html_parser)
+            except Exception as e:
+                if rec:
+                    return Reddit.scrape_listings(url, rec=False)
+
+                logging.error('Unable to scrap profile for {}, after retrying 2 time, the reason: {}'.format(url, str(e)))
+                break
+
+            try:
                 posts = bs.find_all('div', {'class': 'top-matter'})
                 post_count += len(posts)
                 for post in posts:
@@ -49,13 +55,11 @@ class Reddit:
                     user_name = post.find('p', {'class': 'tagline'}).find('a').text
                     if user_name not in user_list:
                         user_list.append(user_name)
-                try:
-                    next_page_url = bs.find('span', {'class': 'next-button'}).find('a')['href']
-                    url = next_page_url
-                except AttributeError:
-                    next_page_url = 0
-            else:
-                next_page_url = 0
+
+                next_page_url = bs.find('span', {'class': 'next-button'}).find('a')['href']
+                url = next_page_url
+            except AttributeError:
+                break
 
         return post_count, comment_count, user_list
 
@@ -65,9 +69,9 @@ class Reddit:
 
         try:
             text = load_page_as_text(user_redit_url, Reddit.html_parser)
-        except:
-            logging.critical(traceback.format_exc())
-            logging.critical("Could not extract data from {} url".format(user_redit_url))
+        except Exception as e:
+            logging.debug(traceback.format_exc())
+            logging.critical("Could not extract data from {} url, the reason is:{}".format(user_redit_url, str(e)))
             return
 
         try:
@@ -85,17 +89,17 @@ class Reddit:
                     re.search(r'<span class="karma">(-?[,\d\s]+)</span>', text).group(1).strip().replace(',', '')
                 )
                 comment_karma = int(
-                    re.search(r'span class="karma comment-karma">(-?[,\d\s]+)</span>', text).group(1).strip().replace(',', '')
+                    re.search(r'span class="karma comment-karma">(-?[,\d\s]+)</span>', text).group(1).strip().replace(
+                        ',', '')
                 )
                 karma = post_karma + comment_karma
             except (AttributeError, ValueError, IndexError):
-                # retry 1 time
+                # retry
                 if rec:
                     time.sleep(3)
                     return Reddit.scrap_user_karma(user_name, rec=False)
 
-                print('Bad reddit page content {}, after requesting 2 times'.format(user_redit_url))
-                logging.error("Unable to get user post karma info for user [{}], retries 2 times".format(user_name))
+                logging.error("Unable to get user post karma info for user [{}], retried 2 times".format(user_name))
                 return
 
         return karma
@@ -109,13 +113,17 @@ class Reddit:
                 logging.info('Obtaining reddit information for {} ico'.format(d['name']))
 
                 post_count, comment_count, users = Reddit.scrape_listings(reddit_url)
+                if len(users) == 0:
+                    continue
 
-                pool = ThreadPool(Reddit.max_threads)
+                pool = ThreadPool(len(users) if len(users) < Reddit.max_threads else Reddit.max_threads)
                 user_karmas = list(
                     tqdm.tqdm(
                         pool.imap(Reddit.scrap_user_karma, users), total=len(users)
                     )
                 )
+                pool.close()
+                pool.join()
 
                 valid_user_karmas = [k for k in user_karmas if k]
                 if len(valid_user_karmas) == 0:
