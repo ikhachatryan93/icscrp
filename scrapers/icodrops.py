@@ -9,6 +9,7 @@ from scrapers.data_keys import ICO_STATUS
 from scrapers.data_keys import SOURCES
 from scrapers.dataprocessor import process_date_type_without_year
 from utilities.utils import load_page
+from scrapers.dataprocessor import convert_scale
 
 
 class IcoDrops(ScraperBase):
@@ -65,13 +66,13 @@ class IcoDrops(ScraperBase):
 
         # whitepaper
         try:
-            data[DataKeys.NAME] = bs.find('div', {'class': 'button'}, text='WHITEPAPER').parent['href']
+            data[DataKeys.WHITEPAPER] = bs.find('div', {'class': 'button'}, text='WHITEPAPER').parent['href']
         except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO whitepaper'))
 
         # website url
         try:
-            data[DataKeys.NAME] = bs.find('div', {'class': 'button'}, text='WEBSITE').parent['href']
+            data[DataKeys.WEBSITE] = bs.find('div', {'class': 'button'}, text='WEBSITE').parent['href']
         except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO website'))
 
@@ -180,3 +181,59 @@ class IcoDrops(ScraperBase):
     def process(data):
         data[DataKeys.ICO_START] = process_date_type_without_year(data[DataKeys.ICO_START], BOOL_VALUES.NOT_AVAILABLE)
         data[DataKeys.ICO_END] = process_date_type_without_year(data[DataKeys.ICO_END], BOOL_VALUES.NOT_AVAILABLE)
+
+    @staticmethod
+    def process_scores(data):
+        score_map = {'Not rated': BOOL_VALUES.NOT_AVAILABLE,
+                     'Very Low': 1,
+                     'Low': 2,
+                     'Normal': 3,
+                     'High': 4,
+                     'Very High': 5}
+
+        roi = data[DataKeys.ROI_SCORE]
+        roi_num = score_map[roi] if roi in score_map else BOOL_VALUES.NOT_AVAILABLE
+        data[DataKeys.ROI_SCORE] = convert_scale(roi_num,
+                                                 current_A=1,
+                                                 current_B=5,
+                                                 desired_A=0,
+                                                 desired_B=10,
+                                                 default=BOOL_VALUES.NOT_AVAILABLE,
+                                                 decimal=True)
+
+        hype = data[DataKeys.HYPE_SCORE]
+        hype_num = score_map[hype] if hype in score_map else BOOL_VALUES.NOT_AVAILABLE
+        data[DataKeys.HYPE_SCORE] = convert_scale(hype_num,
+                                                  current_A=1,
+                                                  current_B=5,
+                                                  desired_A=0,
+                                                  desired_B=10,
+                                                  default=BOOL_VALUES.NOT_AVAILABLE,
+                                                  decimal=True)
+
+        risk = data[DataKeys.RISK_SCORE]
+        risk_num = score_map[risk] if risk in score_map else BOOL_VALUES.NOT_AVAILABLE
+        data[DataKeys.RISK_SCORE] = convert_scale(risk_num,
+                                                  current_A=1,
+                                                  current_B=5,
+                                                  desired_A=0,
+                                                  desired_B=10,
+                                                  default=BOOL_VALUES.NOT_AVAILABLE,
+                                                  decimal=True)
+
+        overall_map = {'Very Low Interest': 1,
+                       'Low Interest': 2,
+                       'Neutral Interest': 3,
+                       'Medium Interest': 4,
+                       'High Interest': 5,
+                       'Very High Interest': 6}
+
+        overall = data[DataKeys.OVERALL_SCORES]
+        overall_num = overall_map[overall] if overall in overall_map else BOOL_VALUES.NOT_AVAILABLE
+        data[DataKeys.OVERALL_SCORES] = convert_scale(overall_num,
+                                                      current_A=1,
+                                                      current_B=6,
+                                                      desired_A=0,
+                                                      desired_B=10,
+                                                      default=BOOL_VALUES.NOT_AVAILABLE,
+                                                      decimal=True)

@@ -10,7 +10,7 @@ from utilities.utils import load_page
 
 # TODO: add config file for this attrs
 __html_parser = 'lxml'
-__max_threads = 20
+__max_threads = 1
 __logger = logging
 __mutex = Lock()
 __n_a = BOOL_VALUES.NOT_AVAILABLE
@@ -42,6 +42,9 @@ def scrape_info(d):
         __logger.CRITICAL('Could not convert telegram users count to number: {}'.format(url))
     except (AttributeError, ValueError):
         __logger.info('Could not find telegram users count: {}'.format(url))
+
+    if url=='https://t.me/joinchat/F_38d0NlVp_oQfB0S5u1Fg':
+        print('asd')
 
 
 def extract_telegram_info(data: list, n_a):

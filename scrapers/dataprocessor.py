@@ -91,7 +91,7 @@ def process_date_type(date, n_a):
     return fdate
 
 
-def process_country_names(data, country_keys, keep_unconverted=True, default_value=None, words_unspecified=None):
+def process_country_names(data, country_keys, keep_unconverted=True, default_value=None, words_unspecified=None, separator=','):
     """
     Format the country names to alfa_3 format of ISO 3166 standard
 
@@ -117,7 +117,7 @@ def process_country_names(data, country_keys, keep_unconverted=True, default_val
         for d in data:
             alpha_3_names = ''
             countries = d[country_key]
-            for cntr in countries.split(','):
+            for cntr in countries.split(separator):
                 if alpha_3_names:
                     alpha_3_names += ', '
 

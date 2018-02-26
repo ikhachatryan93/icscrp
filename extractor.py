@@ -28,6 +28,7 @@ import scrapers.dataprocessor as DataProcessor
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "modules"))
 sys.path.append(os.path.join(dir_path, "scrapers"))
+sys.path.append(os.path.join(dir_path, "utilities"))
 
 
 def parse_arguments():
@@ -56,21 +57,21 @@ def main():
     # except:
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
-    try:
-        scraper = IcoBench(Configs.get('max_threads'))
-        data1 = scraper.scrape_website()
-        write_to_csv("icobench1.csv", data1)
-    except:
-        logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    # try:
+    #     scraper = IcoBench(Configs.get('max_threads'))
+    #     data1 = scraper.scrape_website()
+    #     write_to_csv("icobench1.csv", data1)
+    # except:
+    #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
-    try:
-        scraper = IcoBench(Configs.get('max_threads'))
-        data2 = scraper.scrape_website()
-        write_to_csv("icobench2.csv", data2)
-    except:
-        logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    # try:
+    #     scraper = IcoBench(Configs.get('max_threads'))
+    #     data2 = scraper.scrape_website()
+    #     write_to_csv("icobench2.csv", data2)
+    # except:
+    #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
-    data = data1 + data2
+    # data = data1 + data2
 
     # try:
     #     scraper = IcoMarks(Configs.get('max_threads'))
@@ -96,12 +97,12 @@ def main():
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
     #
 
-    # try:
-    #     scraper = IcoDrops(Configs.get('max_threads'))
-    #     icodrops = scraper.scrape_website()
-    #     write_to_csv("icodrops.csv", icodrops)
-    # except:
-    #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    try:
+        scraper = IcoDrops(Configs.get('max_threads'))
+        data = scraper.scrape_website()
+        write_to_csv('icodrops.csv', data)
+    except:
+        logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
 
     # try:
@@ -122,7 +123,7 @@ def main():
 
     try:
         data = Telegram.extract_telegram_info(data, BOOL_VALUES.NOT_AVAILABLE)
-        # data = Bitcointalk.extract_bitcointalk(data)
+    #    data = Bitcointalk.extract_bitcointalk(data)
 
         data = DataProcessor.process_country_names(data, [DataKeys.COUNTRY, DataKeys.COUNTRIES_RESTRICTED],
                                                    keep_unconverted=True, default_value=BOOL_VALUES.NOT_AVAILABLE,
