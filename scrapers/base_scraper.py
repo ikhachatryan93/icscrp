@@ -62,6 +62,10 @@ class ScraperBase:
         return [data for data in self.scrape_profiles(listings) if data is not None]
 
     @staticmethod
+    def process_scores(d):
+        pass
+
+    @staticmethod
     def process(data):
         s = data[DataKeys.ICO_START] = process_date_type(data[DataKeys.ICO_START], n_a=BOOL_VALUES.NOT_AVAILABLE)
         e = data[DataKeys.ICO_END] = process_date_type(data[DataKeys.ICO_END], n_a=BOOL_VALUES.NOT_AVAILABLE)
@@ -70,3 +74,5 @@ class ScraperBase:
 
         if s != BOOL_VALUES.NOT_AVAILABLE and e != BOOL_VALUES.NOT_AVAILABLE:
             data[DataKeys.STATUS] = process_time_period_status(s, e, BOOL_VALUES.NOT_AVAILABLE)
+
+        ScraperBase.process_scores(data)

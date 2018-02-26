@@ -2,6 +2,7 @@ import logging
 import pycountry
 from datetime import datetime
 import re
+from typing import Union
 
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import ICO_STATUS
@@ -198,13 +199,60 @@ def __merge(d, sub_data, priority_key, priority_table, n_a):
                         d[key] = value
 
 
+def __is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
+def convert_scale(score: str,
+                  current_A: Union[int, float],
+                  current_B: Union[int, float],
+                  desired_A: Union[int, float],
+                  desired_B: Union[int, float],
+                  decimal: bool,
+                  default: str) -> str:
+    """
+    Normalizing Ranges of Numbers,  y = desired_A + (score-current_A)*(desired_B-desired_A)/(current_B-current_A)
+
+    Example: 4.5 (scale of 0-5) is 9 (scale of 0-10)
+
+    Note: see the original article http://mathforum.org/library/drmath/view/60433.html
+
+    Args:
+    :param score: the score to be converted
+    :param current_A: current scale start number
+    :param current_B: current scale end number
+    :param desired_A: desired scale start number
+    :param desired_B: desired scale end number
+    :param decimal: flag which decides whether decimal(float) or integer(int) value will be returned.
+                    The output score will be rounded to nearest whole number if decimal is false.
+    :param default: return this value if conversion failed
+
+    Returns:
+    :return integer or decimal score in scale of desired_A - desired_B
+    """
+
+    if not __is_number(score):
+        return default
+
+    y = desired_A + (float(score) - current_A) * (desired_B - desired_A) / (current_B - current_A)
+
+    if not decimal:
+        return format(y, '.0f')
+
+    return format(y, '.1f')
+
+
 def merge_conflicts(data: list, eq_keys: list, priority_key: str, priority_table: dict, n_a: str) -> []:
     """
     Merge data from different sources. Priority table should be specified, since in case of conflicts the privilege will
     be given to the element with higher priority
 
     Args:
-    :param data: list of dict,
+    :param data: list of dict
     :param eq_keys: list of str, the keys from dict which identify the equality of data buckets(dicts)
     :param priority_key: name of the priority field (e.g. DataDypes.WEBSITE)
     :param priority_table: dict priority table identifying which data should be kept if merge conflict occurred

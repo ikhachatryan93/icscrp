@@ -5,6 +5,7 @@ from scrapers.base_scraper import ScraperBase
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
 from scrapers.data_keys import SOURCES
+from scrapers.dataprocessor import convert_scale
 from utilities.utils import load_page
 from utilities.utils import load_page_with_selenium
 
@@ -84,15 +85,15 @@ class IcoRating(ScraperBase):
                     inv = rating.parent.find('span', {'class': 'name'}, text=True)
                     if inv:
                         value = inv.text.upper()
-                        investment_ratings = {'POSITIVE+': 9,
-                                              'POSITIVE': 8,
-                                              'STABLE+': 7,
-                                              'STABLE': 6,
-                                              'RISKY+': 5,
-                                              'RISKY': 4,
-                                              'RISKY-': 3,
-                                              'NEGATIVE': 2,
-                                              'NEGATIVE-': 1,
+                        investment_ratings = {'POSITIVE+': 8,
+                                              'POSITIVE': 7,
+                                              'STABLE+': 6,
+                                              'STABLE': 5,
+                                              'RISKY+': 4,
+                                              'RISKY': 3,
+                                              'RISKY-': 2,
+                                              'NEGATIVE': 1,
+                                              'NEGATIVE-': 0,
                                               'NA': BOOL_VALUES.NOT_AVAILABLE}
                         rating = investment_ratings[value.upper()]
                         if rating:
@@ -161,3 +162,28 @@ class IcoRating(ScraperBase):
 
         return data
 
+    @staticmethod
+    def process_scores(data):
+        data[DataKeys.ROI_SCORE] = convert_scale(data[DataKeys.ROI_SCORE],
+                                                 current_A=0,
+                                                 current_B=8,
+                                                 desired_A=0,
+                                                 desired_B=10,
+                                                 default=BOOL_VALUES.NOT_AVAILABLE,
+                                                 decimal=True)
+
+        data[DataKeys.HYPE_SCORE] = convert_scale(data[DataKeys.HYPE_SCORE],
+                                                  current_A=0,
+                                                  current_B=5,
+                                                  desired_A=0,
+                                                  desired_B=10,
+                                                  default=BOOL_VALUES.NOT_AVAILABLE,
+                                                  decimal=True)
+
+        data[DataKeys.RISK_SCORE] = convert_scale(data[DataKeys.RISK_SCORE],
+                                                  current_A=0,
+                                                  current_B=5,
+                                                  desired_A=0,
+                                                  desired_B=10,
+                                                  default=BOOL_VALUES.NOT_AVAILABLE,
+                                                  decimal=True)
