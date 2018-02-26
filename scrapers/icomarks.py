@@ -1,32 +1,24 @@
 import re
-
 from multiprocessing.dummy import Lock
+from urllib.request import urljoin
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from scrapers.base_scraper import ScraperBase
-from scrapers.data_keys import DataKeys
 from scrapers.data_keys import BOOL_VALUES
+from scrapers.data_keys import DataKeys
 from scrapers.data_keys import SOURCES
-
 from utilities.utils import click
-from utilities.utils import move_to_element
 from utilities.utils import load_page
 from utilities.utils import setup_browser
-
-from urllib.request import urljoin
 
 
 class IcoMarks(ScraperBase):
     def __init__(self, max_threads=1, max_browsers=0):
 
         super(IcoMarks, self).__init__(max_threads, max_browsers)
-
-        # should be 'selenium' or 'bs4'
-        # TODO: add scrapy support
-        self.engine = 'bs4'
 
         # should be 'firefox', 'chrome' or 'phantomjs'(headless)
         self.browser_name = 'firefox'
@@ -37,7 +29,7 @@ class IcoMarks(ScraperBase):
         self.mutex = Lock()
 
         self.NOT_FOUND_MSG = "From {}: could not find {}"
-        self.max_pagination = 10
+        self.max_pagination = 5
 
         # location of listings in website, may be more than one
         self.urls = ['https://www.icomarks.com/icos?sort=rating-desc']
@@ -222,5 +214,7 @@ class IcoMarks(ScraperBase):
             data[DataKeys.DESCRIPTION] = bs.find('div', {'class', 'company-description'}).text.strip()
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Description'))
+
+        IcoMarks.process(data)
 
         return data

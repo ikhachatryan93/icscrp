@@ -3,8 +3,11 @@ import traceback
 from urllib.request import urljoin
 
 from scrapers.base_scraper import ScraperBase
+from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
+from scrapers.data_keys import ICO_STATUS
 from scrapers.data_keys import SOURCES
+from scrapers.dataprocessor import process_date_type_without_year
 from utilities.utils import load_page
 
 
@@ -126,6 +129,19 @@ class IcoDrops(ScraperBase):
         except (AttributeError, TypeError):
             self.logger.info(self.NOT_FOUND_MSG.format(url, 'rating'))
 
+        # status
+        token_sale = bs.select_one('div.token-sale')
+        if token_sale:
+            status_tag = token_sale.find('strong', text=True)
+            if status_tag:
+                status = status_tag.text.strip()
+                if 'ended' in status:
+                    data[DataKeys.STATUS] = ICO_STATUS.ENDED
+                elif 'starts' in status:
+                    data[DataKeys.STATUS] = ICO_STATUS.UPCOMING
+                elif 'ends in' in status:
+                    data[DataKeys.STATUS] = ICO_STATUS.ACTIVE
+
         # date
         date = bs.find('h4', text=re.compile('Token Sale:*'))
         if date:
@@ -156,4 +172,11 @@ class IcoDrops(ScraperBase):
         except (TypeError, AttributeError):
             self.logger.info(self.NOT_FOUND_MSG.format(url, 'info'))
 
+        IcoDrops.process(data)
+
         return data
+
+    @staticmethod
+    def process(data):
+        data[DataKeys.ICO_START] = process_date_type_without_year(data[DataKeys.ICO_START], BOOL_VALUES.NOT_AVAILABLE)
+        data[DataKeys.ICO_END] = process_date_type_without_year(data[DataKeys.ICO_END], BOOL_VALUES.NOT_AVAILABLE)

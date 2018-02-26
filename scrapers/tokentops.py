@@ -1,6 +1,6 @@
 import re
-
 from multiprocessing.dummy import Lock
+from urllib.request import urljoin
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -9,14 +9,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from scrapers.base_scraper import ScraperBase
 from scrapers.data_keys import DataKeys
 from scrapers.data_keys import SOURCES
-from scrapers.data_keys import BOOL_VALUES
-
 from utilities.utils import click
 from utilities.utils import load_page
 from utilities.utils import setup_browser
-
-from urllib.request import urljoin
-from scrapers.dataprocessor import process_date_type3
 
 
 class TokenTops(ScraperBase):
@@ -177,20 +172,8 @@ class TokenTops(ScraperBase):
         except:
             pass
 
-        process(data)
+        TokenTops.process(data)
         return data
 
 
-def process(data):
-    data[DataKeys.ICO_START] = process_date_type3(data[DataKeys.ICO_START],
-                                                  default=data[DataKeys.ICO_START],
-                                                  n_a=BOOL_VALUES.NOT_AVAILABLE)
-    data[DataKeys.ICO_END] = process_date_type3(data[DataKeys.ICO_END],
-                                                default=data[DataKeys.ICO_END],
-                                                n_a=BOOL_VALUES.NOT_AVAILABLE)
-    data[DataKeys.PRE_ICO_START] = process_date_type3(data[DataKeys.PRE_ICO_START],
-                                                      default=data[DataKeys.PRE_ICO_START],
-                                                      n_a=BOOL_VALUES.NOT_AVAILABLE)
-    data[DataKeys.PRE_ICO_END] = process_date_type3(data[DataKeys.PRE_ICO_END],
-                                                    default=data[DataKeys.PRE_ICO_END],
-                                                    n_a=BOOL_VALUES.NOT_AVAILABLE)
+

@@ -17,7 +17,7 @@ from scrapers.base_scraper import ScraperBase
 from utilities.proxy_generator import get_paied_proxies
 from utilities.utils import load_page_via_proxies
 
-import scrapers.dataprocessor as processor
+from scrapers.dataprocessor import process_date_type
 
 
 class TrackIco(ScraperBase):
@@ -31,7 +31,7 @@ class TrackIco(ScraperBase):
         self.__pr_len = len(self.__proxies)
         self.__proxy_id = 0
 
-    # should be 'firefox', 'chrome' or 'phantomjs'(headless)
+        # should be 'firefox', 'chrome' or 'phantomjs'(headless)
         self.browser_name = None
 
         # should be 'html5lib', 'lxml' or 'html.parser'
@@ -118,7 +118,7 @@ class TrackIco(ScraperBase):
                 self.__proxy_id = 0
 
         try:
-            #bs = load_page(url, self.html_parser)
+            # bs = load_page(url, self.html_parser)
             bs = load_page_via_proxies(url, self.html_parser, proxy=ip)
         except:
             self.logger.warning('Could not scrape profile {}'.format(url))
@@ -133,7 +133,7 @@ class TrackIco(ScraperBase):
 
         # ICO Logo
         try:
-            data[DataKeys.LOGO_URL] = header.img['src'].strip()
+            data[DataKeys.LOGO_URL] = urljoin(self.domain, header.img['src'])
         except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO logo'))
 
@@ -147,30 +147,32 @@ class TrackIco(ScraperBase):
             data[DataKeys.PRE_ICO_START] = pre_ico_dates.split('-')[0].strip()
             data[DataKeys.PRE_ICO_END] = pre_ico_dates.split('-')[1].strip()
 
-        except:
+        except (AttributeError, IndexError):
             self.logger.debug(self.NOT_FOUND_MSG.format(url, 'Pre ICO dates'))
 
         try:
             ico_dates = bs.find('span', {'class': 'fa fa-calendar fs-30'}).findNextSibling('span').text
             data[DataKeys.ICO_START] = ico_dates.split('-')[0].strip()
             data[DataKeys.ICO_END] = ico_dates.split('-')[1].strip()
-        except:
+        except (AttributeError, IndexError):
             self.logger.debug(self.NOT_FOUND_MSG.format(url, 'ICO dates'))
 
         try:
-            data[DataKeys.COUNTRY] = bs.find('span', {'class': 'fa fa-globe fs-30'}).findNextSibling( 'span').text.strip()
-        except:
+            data[DataKeys.COUNTRY] = bs.find('span', {'class': 'fa fa-globe fs-30'}).findNextSibling(
+                'span').text.strip()
+        except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO country'))
 
         try:
-            data[DataKeys.PLATFORM] = bs.find('span', {'class': 'fa fa-server fs-30'}).findNextSibling('span').text
-        except:
+            data[DataKeys.PLATFORM] = bs.find('span', {'class': 'fa fa-server fs-30'}).findNextSibling(
+                'span').text.strip()
+        except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO platform'))
 
         try:
             data[DataKeys.OVERALL_SCORES] = bs.find('span', {'class': 'fa fa-heart fs-30'}).findNextSibling(
-                'span').find('strong').text
-        except:
+                'span').find('strong').text.strip()
+        except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO Rating'))
 
         # getting social pages
@@ -203,18 +205,3 @@ class TrackIco(ScraperBase):
         TrackIco.process(data)
 
         return data
-
-    @staticmethod
-    def process(data):
-        data[DataKeys.ICO_START] = processor.process_date_type2(data[DataKeys.ICO_START],
-                                                                default=data[DataKeys.ICO_START],
-                                                                n_a='Unspecified ' + BOOL_VALUES.NOT_AVAILABLE)
-        data[DataKeys.ICO_END] = processor.process_date_type2(data[DataKeys.ICO_END],
-                                                              default=data[DataKeys.ICO_END],
-                                                              n_a='Unspecified' + BOOL_VALUES.NOT_AVAILABLE)
-        data[DataKeys.PRE_ICO_START] = processor.process_date_type2(data[DataKeys.PRE_ICO_START],
-                                                                    default=data[DataKeys.PRE_ICO_START],
-                                                                    n_a='Unspecified' + BOOL_VALUES.NOT_AVAILABLE)
-        data[DataKeys.PRE_ICO_END] = processor.process_date_type2(data[DataKeys.PRE_ICO_END],
-                                                                  default=data[DataKeys.PRE_ICO_END],
-                                                                  n_a='Unspecified' + BOOL_VALUES.NOT_AVAILABLE)

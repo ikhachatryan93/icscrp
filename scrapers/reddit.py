@@ -1,23 +1,15 @@
 import logging
 import re
+import time
 import traceback
 from multiprocessing.pool import ThreadPool
-import uuid
 
 import tqdm
-import time
 
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
-from utilities.utils import load_page_as_text
 from utilities.utils import load_page
-
-
-# dir_path = os.path.dirname(os.path.realpath(__file__))
-# sys.path.append(os.path.join(dir_path, "modules"))
-# sys.path.append(os.path.join(dir_path, "drivers"))
-# sys.path.append(os.path.join(dir_path, "scrapers"))
-# sys.path.append(os.path.join(dir_path, "utilities"))
+from utilities.utils import load_page_as_text
 
 
 class Reddit:
@@ -27,7 +19,6 @@ class Reddit:
     @staticmethod
     def scrape_listings(url, rec=True):
 
-        next_page_url = ''
         post_count = 0
         user_list = []
         comment_count = 0
@@ -42,7 +33,8 @@ class Reddit:
                 if rec:
                     return Reddit.scrape_listings(url, rec=False)
 
-                logging.error('Unable to scrap profile for {}, after retrying 2 time, the reason: {}'.format(url, str(e)))
+                logging.error(
+                    'Unable to scrap profile for {}, after retrying 2 time, the reason: {}'.format(url, str(e)))
                 break
 
             try:
@@ -56,8 +48,7 @@ class Reddit:
                     if user_name not in user_list:
                         user_list.append(user_name)
 
-                next_page_url = bs.find('span', {'class': 'next-button'}).find('a')['href']
-                url = next_page_url
+                url = bs.find('span', {'class': 'next-button'}).find('a')['href']
             except AttributeError:
                 break
 

@@ -1,12 +1,14 @@
-from datetime import datetime
+import logging
 from multiprocessing import Lock
 from multiprocessing.pool import ThreadPool
-from utilities.utils import setup_browser
-from utilities.utils import Configs
-from scrapers.data_keys import DataKeys
-import logging
 
 import tqdm
+
+from scrapers.data_keys import DataKeys
+from scrapers.data_keys import BOOL_VALUES
+from scrapers.dataprocessor import process_time_period_status
+from scrapers.dataprocessor import process_date_type
+from utilities.utils import Configs
 
 
 # Abstract class
@@ -58,3 +60,13 @@ class ScraperBase:
             return [data for data in self.scrape_profiles(listings[:Configs.get('max_items')]) if data is not None]
 
         return [data for data in self.scrape_profiles(listings) if data is not None]
+
+    @staticmethod
+    def process(data):
+        s = data[DataKeys.ICO_START] = process_date_type(data[DataKeys.ICO_START], n_a=BOOL_VALUES.NOT_AVAILABLE)
+        e = data[DataKeys.ICO_END] = process_date_type(data[DataKeys.ICO_END], n_a=BOOL_VALUES.NOT_AVAILABLE)
+        data[DataKeys.PRE_ICO_START] = process_date_type(data[DataKeys.PRE_ICO_START], n_a=BOOL_VALUES.NOT_AVAILABLE)
+        data[DataKeys.PRE_ICO_END] = process_date_type(data[DataKeys.PRE_ICO_END], n_a=BOOL_VALUES.NOT_AVAILABLE)
+
+        if s != BOOL_VALUES.NOT_AVAILABLE and e != BOOL_VALUES.NOT_AVAILABLE:
+            data[DataKeys.STATUS] = process_time_period_status(s, e, BOOL_VALUES.NOT_AVAILABLE)

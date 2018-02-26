@@ -12,6 +12,8 @@ from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
 from scrapers.data_keys import SOURCES
 from utilities.utils import load_page
+from utilities.utils import load_page_via_proxies
+from utilities.proxy_generator import get_paied_proxies
 
 
 class IcoBench(ScraperBase):
@@ -19,17 +21,15 @@ class IcoBench(ScraperBase):
 
         super(IcoBench, self).__init__(max_threads, max_browsers)
 
-        # should be 'selenium' or 'bs4'
-        # TODO: add scrapy support
-        self.engine = 'bs4'
-
         # should be 'firefox', 'chrome' or 'phantomjs'(headless)
         self.browser_name = None
 
         # should be 'html5lib', 'lxml' or 'html.parser'
         self.html_parser = 'html5lib'
 
-        self.drivers = []
+        self.__proxies = get_paied_proxies()
+        self.__pr_len = len(self.__proxies)
+        self.__proxy_id = 0
 
         self.NOT_FOUND_MSG = "From {}: could not find {}"
 
@@ -40,7 +40,14 @@ class IcoBench(ScraperBase):
     def scrape_listings_from_page(self, url):
         # next page url from 'Next 'pagination tag
         try:
-            bs = load_page(url.split('&')[0], self.html_parser)
+            ip = self.__proxies[self.__proxy_id % self.__pr_len]
+            with self.mutex:
+                self.__proxy_id += 1
+            if self.__proxy_id > 1000000:
+                with self.mutex:
+                    self.__proxy_id = 0
+            # bs = load_page(url.split('&')[0], self.html_parser)
+            bs = load_page_via_proxies(url.split('&')[0], self.html_parser, ip)
         except:
             print(traceback.format_exc())
             return
@@ -94,7 +101,14 @@ class IcoBench(ScraperBase):
     def scrape_listings(self, url):
         # next page url from 'Next 'pagination tag
         try:
-            bs = load_page(url.split('&')[0], self.html_parser)
+            ip = self.__proxies[self.__proxy_id % self.__pr_len]
+            with self.mutex:
+                self.__proxy_id += 1
+            if self.__proxy_id > 1000000:
+                with self.mutex:
+                    self.__proxy_id = 0
+            bs = load_page_via_proxies(url.split('&')[0], self.html_parser, ip)
+            # bs = load_page(url.split('&')[0], self.html_parser)
         except URLError:
             self.logger.critical('Timeout error while scraping listings from %s', url)
             return
@@ -130,7 +144,14 @@ class IcoBench(ScraperBase):
         data[DataKeys.PROFILE_URL] = url
         data[DataKeys.SOURCE] = SOURCES.ICOBENCH
         try:
-            bs = load_page(url, self.html_parser)
+            ip = self.__proxies[self.__proxy_id % self.__pr_len]
+            with self.mutex:
+                self.__proxy_id += 1
+            if self.__proxy_id > 1000000:
+                with self.mutex:
+                    self.__proxy_id = 0
+            bs = load_page_via_proxies(url, self.html_parser, ip)
+            # bs = load_page(url, self.html_parser)
         except:
             print(traceback.format_exc())
             self.logger.error('Error while scraping profile {}'.format(url))
@@ -260,7 +281,9 @@ class IcoBench(ScraperBase):
         try:
             logo_link = bs.find('div', {'class': 'image'}).find('img')
             data[DataKeys.LOGO_URL] = urljoin(self.domain, logo_link['src'])
-        except:
+        except (AttributeError, KeyError):
             self.logger.warning(self.NOT_FOUND_MSG.format('Logo url'))
+
+        IcoBench.process(data)
 
         return data

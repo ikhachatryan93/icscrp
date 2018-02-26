@@ -56,27 +56,36 @@ def main():
     # except:
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
+    try:
+        scraper = IcoBench(Configs.get('max_threads'))
+        data1 = scraper.scrape_website()
+        write_to_csv("icobench1.csv", data1)
+    except:
+        logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
-    # try:
-    #     scraper = IcoBench(Configs.get('max_threads'))
-    #     data += scraper.scrape_website()
-    #     # write_to_csv("icobench.csv", data)
-    # except:
-    #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    try:
+        scraper = IcoBench(Configs.get('max_threads'))
+        data2 = scraper.scrape_website()
+        write_to_csv("icobench2.csv", data2)
+    except:
+        logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+
+    data = data1 + data2
 
     # try:
     #     scraper = IcoMarks(Configs.get('max_threads'))
-    #     data += scraper.scrape_website()
-    #     # write_to_csv("icomarks.csv", data)
+    #     icomarks_data = scraper.scrape_website()
+    #     write_to_csv("icomarks.csv", icomarks_data)
     # except:
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
     # try:
     #     scraper = TokenTops(Configs.get('max_threads'))
-    #     data += scraper.scrape_website()
-    #     write_to_csv("tokentops.csv", data)
+    #     tokentops_data = scraper.scrape_website()
+    #     write_to_csv("tokentops.csv", tokentops_data)
     # except:
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+
     #
     # try:
     #     scraper = IcoBazaar(Configs.get('max_threads'))
@@ -86,53 +95,56 @@ def main():
     # except:
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
     #
+
     # try:
     #     scraper = IcoDrops(Configs.get('max_threads'))
-    #     data += scraper.scrape_website()
-    #     # write_to_csv("icodrops.csv", data)
+    #     icodrops = scraper.scrape_website()
+    #     write_to_csv("icodrops.csv", icodrops)
     # except:
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
+
     # try:
     #     scraper = IcoRating(Configs.get('max_threads'))
-    #     data += scraper.scrape_website()
-    #     # write_to_csv("icorating.csv", data)
+    #     icorating_data = scraper.scrape_website()
+    #     write_to_csv("icorating1.csv", icorating_data)
+    # except:
+    #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+
+
+    # try:
+    #     scraper = TrackIco(Configs.get('max_threads'))
+    #     data = scraper.scrape_website()
+    #     # data = Reddit.exctract_reddit(data)
+    #     write_to_excel('trackico.csv', dict_list=data)
     # except:
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
     try:
-        scraper = TrackIco(Configs.get('max_threads'))
-        data = scraper.scrape_website()
-        data = Reddit.exctract_reddit(data)
-        write_to_excel('trackico.xls', dict_list=data)
+        data = Telegram.extract_telegram_info(data, BOOL_VALUES.NOT_AVAILABLE)
+        # data = Bitcointalk.extract_bitcointalk(data)
+
+        data = DataProcessor.process_country_names(data, [DataKeys.COUNTRY, DataKeys.COUNTRIES_RESTRICTED],
+                                                   keep_unconverted=True, default_value=BOOL_VALUES.NOT_AVAILABLE,
+                                                   words_unspecified=['Unspecified'])
+
+        data = DataProcessor.merge_conflicts(data=data,
+                                             eq_keys=[DataKeys.NAME, DataKeys.TOKEN_NAME],
+                                             priority_key=DataKeys.SOURCE,
+                                             # TODO: define best priority
+                                             priority_table={SOURCES.ICOBENCH: 0,
+                                                             SOURCES.ICOMARKS: 1,
+                                                             SOURCES.ICODROPS: 2,
+                                                             SOURCES.TOKENTOPS: 3,
+                                                             SOURCES.TRACKICO: 4,
+                                                             SOURCES.ICORATING: 5},
+                                             n_a=BOOL_VALUES.NOT_AVAILABLE)
+
     except:
-        logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+        logging.error('Processor failed: \n {}'.format(traceback.format_exc()))
+        exit(2)
 
-    final_data = []
-    # try:
-    #     data = Telegram.extract_telegram_info(data, BOOL_VALUES.NOT_AVAILABLE)
-    #     # data = Bitcointalk.extract_bitcointalk(data)
-    #
-    #     DataProcessor.process_country_names(data, [DataKeys.COUNTRY, DataKeys.COUNTRIES_RESTRICTED],
-    #                                         keep_unconverted=True, default_value=BOOL_VALUES.NOT_AVAILABLE,
-    #                                         words_unspecified=['UNSPECIFIED'])
-    #     DataProcessor.merge_conflicts(data=data,
-    #                                   eq_keys=[DataKeys.NAME, DataKeys.TOKEN_NAME],
-    #                                   priority_key=DataKeys.SOURCE,
-    #                                   # TODO: define best priority
-    #                                   priority_table={SOURCES.ICOBENCH: 0,
-    #                                                   SOURCES.ICOMARKS: 1,
-    #                                                   SOURCES.ICODROPS: 2,
-    #                                                   SOURCES.TOKENTOPS: 3,
-    #                                                   SOURCES.TRACKICO: 4,
-    #                                                   SOURCES.ICORATING: 5},
-    #                                   n_a=BOOL_VALUES.NOT_AVAILABLE)
-    #
-    # except:
-    #     logging.error('Processor failed: \n {}'.format(traceback.format_exc()))
-    #     exit(2)
-
-    # write_to_csv('final.csv', data)
+    write_to_csv('final.csv', data)
 
 
 # try:

@@ -1,19 +1,18 @@
 import logging
-import re
 import random
+import re
 import time
-import tqdm
 import traceback
-
 from multiprocessing.dummy import Lock
 from multiprocessing.pool import ThreadPool
+
+import tqdm
 
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
 from utilities.proxy_generator import get_paied_proxies
 from utilities.utils import load_page
 from utilities.utils import load_page_via_proxies_as_text
-from utilities.utils import setup_browser
 
 __html_parser = 'html5lib'
 __max_threads = 10

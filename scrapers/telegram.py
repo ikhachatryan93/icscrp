@@ -1,28 +1,29 @@
 import logging
-from multiprocessing.pool import ThreadPool
 from multiprocessing.dummy import Lock
-import tqdm
-import re
+from multiprocessing.pool import ThreadPool
 
-from utilities.utils import load_page
+import tqdm
+
+from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
+from utilities.utils import load_page
 
 # TODO: add config file for this attrs
 __html_parser = 'lxml'
 __max_threads = 20
 __logger = logging
 __mutex = Lock()
-__n_a = None
+__n_a = BOOL_VALUES.NOT_AVAILABLE
 
 
 def scrape_info(d):
-    if DataKeys.TELEGRAM_URL in d:
-        url = d[DataKeys.TELEGRAM_URL]
-    else:
+    if d[DataKeys.TELEGRAM_URL] == __n_a:
         return
 
-    if url == __n_a:
-        return
+    url = d[DataKeys.TELEGRAM_URL]
+    with __mutex:
+        d[DataKeys.TELEGRAM_URL] = __n_a
+        d[DataKeys.TELEGRAM_SUBSCRIBERS] = __n_a
 
     try:
         bs = load_page(url, __html_parser)
@@ -34,9 +35,9 @@ def scrape_info(d):
         tel_subscr_str = bs.find('div', {'class': 'tgme_page_extra'}).text
         num_tel_sub = int(''.join(filter(str.isdigit, tel_subscr_str)))
 
-        __mutex.acquire()
-        d[DataKeys.TELEGRAM_SUBSCRIBERS] = num_tel_sub
-        __mutex.release()
+        with __mutex:
+            d[DataKeys.TELEGRAM_SUBSCRIBERS] = num_tel_sub
+            d[DataKeys.TELEGRAM_URL] = url
     except ValueError:
         __logger.CRITICAL('Could not convert telegram users count to number: {}'.format(url))
     except (AttributeError, ValueError):

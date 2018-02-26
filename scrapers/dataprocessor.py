@@ -1,93 +1,96 @@
 import logging
 import pycountry
 from datetime import datetime
+import re
 
 from scrapers.data_keys import BOOL_VALUES
+from scrapers.data_keys import ICO_STATUS
+from utilities.country_keys import iso_name_from_unofficial
 
 logger = logging
+date_format = '%d-%m-%Y'
 
 
-def process_date_type1(date, default, n_a):
+def process_time_period_status(sdate, edate, n_a):
+    try:
+        start_date = datetime.strptime(sdate, date_format)
+        end_date = datetime.strptime(edate, date_format)
+    except ValueError:
+        logger.CRITICAL('Bad date format, while parsing date : {} - {}'.format(sdate, edate))
+        return n_a
+
+    if start_date <= datetime.today() <= end_date:
+        return ICO_STATUS.ACTIVE
+    elif datetime.today() < start_date:
+        return ICO_STATUS.UPCOMING
+    elif datetime.today() > end_date:
+        return ICO_STATUS.ENDED
+
+    return n_a
+
+
+def process_date_type_without_year(date, n_a):
     """
-    Converts a date string from '02.08.1993' to '02-08-1993'
+    Converts a date string from  '02 August 1993' to '27-12-2015'
 
     Args:
+    :param date: date in %d %m
     :param n_a: not available sign
-    :param date: %d.%m.%y formatted date
-    :param default: retrun this value ins case of conversion is failed
 
     Returns:
     :return: %d-%m-%y formatted date, default if conversion failed.
     """
-    if date in n_a:
-        return default
+    date = date.strip()
 
-    try:
-        rdate = datetime.strptime(date, '%d.%m.%Y').strftime('%d-%m-%Y')
-    except ValueError:
-        logging.warning('Could not format date from {} string'.format(date))
-        return default
+    input_formats = ['%d %b']
+    fdate = n_a
+    for in_fmt in input_formats:
+        try:
+            fdate = datetime.strptime(date, in_fmt).strftime('%d-%m')
+        except ValueError:
+            pass
 
-    return rdate
+    # debugging
+    if fdate == n_a and re.match('.*\d.*', date):
+        logging.warning('Could not convert date format: {}'.format(date))
+
+    return fdate
 
 
-def process_date_type2(date, default, n_a):
+def process_date_type(date, n_a):
     """
-    Converts a date string from 'Dec. 27, 2015' or 'December 27, 2015' to '27-12-2015'
+    Converts a date string from '02.08.1993', 'Dec. 27, 2015' or 'December 27, 2015', '02 August 1993' to '27-12-2015'
 
     Args:
-    :param date: %B %d, %Y or %b. %d, %Y format (e.g. March 24, 2018)
-    :param default: retrun this value ins case of conversion is failed
+    :param date: date in  %d.%m.%y or %d %B %Y or %B %d, %Y or %b. %d, %Y format
     :param n_a: not available sign
 
     Returns:
-    :return: %d-%m-%y formated date, default if conversion failed.
+    :return: %d-%m-%y formatted date, default if conversion failed.
     """
 
-    if date in n_a:
-        return default
+    date = date.strip()
 
     # special cases
     date = date.replace('Sept', 'Sep')
+    date = date.replace('Sepember', 'September')
 
-    try:
-        rdate = datetime.strptime(date, '%B %d, %Y').strftime('%d-%m-%Y')
-    except ValueError:
+    input_formats = ['%B %d, %Y', '%b. %d, %Y', '%d %B %Y', '%d.%m.%Y', '%d %b %Y', '%Y-%m-%d', date_format]
+    fdate = n_a
+    for in_fmt in input_formats:
         try:
-            rdate = datetime.strptime(date, '%b. %d, %Y').strftime('%d-%m-%Y')
+            fdate = datetime.strptime(date, in_fmt).strftime(date_format)
         except ValueError:
-            logging.warning('Could not format date from {} string'.format(date))
-            return default
+            pass
 
-    return rdate
+    # debugging
+    if fdate == n_a and re.match('.*\d.*', date):
+        logging.warning('Could not convert date format: {}'.format(date))
 
-
-def process_date_type3(date, default, n_a):
-    """
-    Converts a date string from '02 August 1993'
-
-    Args:
-    :param date: %d %B %Y format
-    :param default: return this value ins case of conversion is failed
-    :param n_a: not available sign
-
-    Returns:
-    :return: %d-%m-%y formatted date, default if conversion failed.
-    """
-
-    if date in n_a:
-        return default
-
-    try:
-        rdate = datetime.strptime(date, '%d %B %Y').strftime('%d-%m-%Y')
-    except ValueError:
-        logging.warning('Could not format date from {} string'.format(date))
-        return default
-
-    return rdate
+    return fdate
 
 
-def process_country_names(data, country_keys, keep_unconverted=True, default_value=None, words_unspecified=()):
+def process_country_names(data, country_keys, keep_unconverted=True, default_value=None, words_unspecified=None):
     """
     Format the country names to alfa_3 format of ISO 3166 standard
 
@@ -101,6 +104,14 @@ def process_country_names(data, country_keys, keep_unconverted=True, default_val
     Returns:
     :return: data with alfa_3 formatted counties
     """
+
+    special_cases = iso_name_from_unofficial
+
+    for w in words_unspecified:
+        special_cases[w] = default_value
+
+    special_cases[default_value] = default_value
+
     for country_key in country_keys:
         for d in data:
             alpha_3_names = ''
@@ -110,8 +121,8 @@ def process_country_names(data, country_keys, keep_unconverted=True, default_val
                     alpha_3_names += ', '
 
                 country = cntr.strip()
-                if country in words_unspecified or country == default_value:
-                    alpha_3_names += default_value
+                if country in special_cases:
+                    alpha_3_names += special_cases[country]
                     continue
 
                 if country != BOOL_VALUES.NOT_AVAILABLE:
@@ -138,6 +149,8 @@ def process_country_names(data, country_keys, keep_unconverted=True, default_val
                                 continue
 
             d[country_key] = alpha_3_names
+
+    return data
 
 
 def __data_len(dct, n_a):
@@ -185,7 +198,7 @@ def __merge(d, sub_data, priority_key, priority_table, n_a):
                         d[key] = value
 
 
-def merge_conflicts(data: list, eq_keys: list, priority_key: str, priority_table: dict, n_a: str) -> None:
+def merge_conflicts(data: list, eq_keys: list, priority_key: str, priority_table: dict, n_a: str) -> []:
     """
     Merge data from different sources. Priority table should be specified, since in case of conflicts the privilege will
     be given to the element with higher priority
@@ -210,7 +223,10 @@ def merge_conflicts(data: list, eq_keys: list, priority_key: str, priority_table
     while len(good_data) > 0:
         d = good_data.pop()
         similar_subdata = __pop_similar_subdata(d, good_data, eq_keys)
-        if not similar_subdata:
-            merged_data.append(d)
-        else:
+
+        if similar_subdata:
             __merge(d, similar_subdata, priority_key, priority_table, n_a)
+
+        merged_data.append(d)
+
+    return merged_data

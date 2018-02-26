@@ -5,6 +5,12 @@ class BOOL_VALUES:
     NOT_AVAILABLE = '-'
 
 
+class ICO_STATUS:
+    ENDED = 'ended'
+    UPCOMING = 'upcoming'
+    ACTIVE = 'active'
+
+
 class SOURCES:
     ICODROPS = 'icodrops'
     ICOBAZAAR = 'icobazaar'

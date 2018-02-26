@@ -5,7 +5,6 @@ from scrapers.base_scraper import ScraperBase
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
 from scrapers.data_keys import SOURCES
-import scrapers.dataprocessor as processor
 from utilities.utils import load_page
 from utilities.utils import load_page_with_selenium
 
@@ -101,34 +100,33 @@ class IcoRating(ScraperBase):
         except:
             self.logger.warning('Exception while scraping {} from {}'.format('rating info', url))
 
-        try:
-            link_tags = bs.findAll('a', {'target': '_blank'}, text=False)
-            soc_mapping = {'FACEBOOK': DataKeys.FACEBOOK_URL, 'GITHUB': DataKeys.GITHUB_URL,
-                           'MEDIUM': DataKeys.MEDIUM_URL, 'INSTAGRAM': DataKeys.INSTAGRAM_URL,
-                           'TELEGRAM': DataKeys.TELEGRAM_URL, 'REDDIT': DataKeys.REDDIT_URL,
-                           'BTCTALK': DataKeys.BITCOINTALK_URL,
-                           'WEBSITE': DataKeys.WEBSITE, 'LINKEDIN': DataKeys.LINKEDIN_URL,
-                           'TWITTER': DataKeys.TWITTER_URL}
-            for link_tag in link_tags:
-                try:
-                    text = link_tag.text.strip().upper()
-                    key = soc_mapping[text]
-                    data[key] = link_tag['href']
-                except:
-                    continue
-        except:
-            self.logger.warning('Exception while scraping {} from {}'.format('links', url))
+        link_tags = bs.findAll('a', {'target': '_blank'}, text=False)
+        soc_mapping = {'FACEBOOK': DataKeys.FACEBOOK_URL, 'GITHUB': DataKeys.GITHUB_URL,
+                       'MEDIUM': DataKeys.MEDIUM_URL, 'INSTAGRAM': DataKeys.INSTAGRAM_URL,
+                       'TELEGRAM': DataKeys.TELEGRAM_URL, 'REDDIT': DataKeys.REDDIT_URL,
+                       'BTCTALK': DataKeys.BITCOINTALK_URL,
+                       'WEBSITE': DataKeys.WEBSITE, 'LINKEDIN': DataKeys.LINKEDIN_URL,
+                       'TWITTER': DataKeys.TWITTER_URL}
+
+        for link_tag in link_tags:
+            try:
+                text = link_tag.text.strip().upper()
+                key = soc_mapping[text]
+                data[key] = link_tag['href']
+            except (AttributeError, KeyError):
+                continue
 
         # logo link
         try:
-            data[DataKeys.LOGO_URL] = urljoin(self.domain,
-                                              bs.find('div', {'class': 'share'}).find_previous_sibling('img')['src'])
+            data[DataKeys.LOGO_URL] = urljoin(
+                self.domain, bs.find('div', {'class': 'share'}).find_previous_sibling('img')['src']
+            )
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'logo url'))
 
         # description
         try:
-            data[DataKeys.DESCRIPTION] = bs.find('td', text='Description:').find_next_sibling().text
+            data[DataKeys.DESCRIPTION] = bs.find('td', text='Description:').find_next_sibling().text.strip()
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'description'))
 
@@ -159,21 +157,7 @@ class IcoRating(ScraperBase):
         except:
             self.logger.error(self.NOT_FOUND_MSG.format(url + '/details', 'info table'))
 
-        process(data)
+        IcoRating.process(data)
 
         return data
 
-
-def process(data):
-    data[DataKeys.ICO_START] = processor.process_date_type1(data[DataKeys.ICO_START],
-                                                            default=data[DataKeys.ICO_START],
-                                                            n_a=BOOL_VALUES.NOT_AVAILABLE)
-    data[DataKeys.ICO_END] = processor.process_date_type1(data[DataKeys.ICO_END],
-                                                          default=data[DataKeys.ICO_END],
-                                                          n_a=BOOL_VALUES.NOT_AVAILABLE)
-    data[DataKeys.PRE_ICO_START] = processor.process_date_type1(data[DataKeys.PRE_ICO_START],
-                                                                default=data[DataKeys.PRE_ICO_START],
-                                                                n_a=BOOL_VALUES.NOT_AVAILABLE)
-    data[DataKeys.PRE_ICO_END] = processor.process_date_type1(data[DataKeys.PRE_ICO_END],
-                                                              default=data[DataKeys.PRE_ICO_END],
-                                                              n_a=BOOL_VALUES.NOT_AVAILABLE)
