@@ -91,11 +91,12 @@ def process_date_type(date, n_a):
     return fdate
 
 
-def process_country_names(data, country_keys, keep_unconverted=True, default_value=None, words_unspecified=None, separator=','):
+def process_country_names(data, country_keys, keep_unconverted=True, default_value=None, words_unspecified=None, separator=None):
     """
     Format the country names to alfa_3 format of ISO 3166 standard
 
     Args:
+    :param separator:
     :param data: list of dict data
     :param keep_unconverted: keep long string country name if conversion failed
     :param country_keys: list of keys in data referring to country fields

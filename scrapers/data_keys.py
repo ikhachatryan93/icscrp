@@ -16,7 +16,7 @@ class SOURCES:
     ICOBAZAAR = 'icobazaar'
     ICOBENCH = 'icobench'
     TRACKICO = 'trackico'
-    TOKENTOPS = 'topentops'
+    TOKENTOPS = 'tokentops'
     ICOMARKS = 'icomarks'
     ICORATING = 'icoratings'
 

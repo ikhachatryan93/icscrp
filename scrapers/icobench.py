@@ -8,6 +8,7 @@ from urllib.request import urljoin
 import tqdm
 
 from scrapers.base_scraper import ScraperBase
+from scrapers.dataprocessor import convert_scale
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
 from scrapers.data_keys import SOURCES
@@ -275,7 +276,7 @@ class IcoBench(ScraperBase):
                     if soc.upper() in soc_mapping:
                         data[soc_mapping[soc.upper()]] = link_tag['href']
 
-        except:
+        except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Social links'))
 
         try:
@@ -287,3 +288,41 @@ class IcoBench(ScraperBase):
         IcoBench.process(data)
 
         return data
+
+
+def process_scores(d):
+    overall = d[DataKeys.OVERALL_SCORES]
+    d[DataKeys.OVERALL_SCORES] = convert_scale(overall,
+                                               current_A=0,
+                                               current_B=5,
+                                               desired_A=ScraperBase.scale_A,
+                                               desired_B=ScraperBase.scale_B,
+                                               default=BOOL_VALUES.NOT_AVAILABLE,
+                                               decimal=True)
+
+    team = d[DataKeys.TEAM_SCORE]
+    d[DataKeys.TEAM_SCORE] = convert_scale(team,
+                                           current_A=0,
+                                           current_B=5,
+                                           desired_A=ScraperBase.scale_A,
+                                           desired_B=ScraperBase.scale_B,
+                                           default=BOOL_VALUES.NOT_AVAILABLE,
+                                           decimal=True)
+
+    vision = d[DataKeys.VISION_SCORE]
+    d[DataKeys.VISION_SCORE] = convert_scale(vision,
+                                             current_A=0,
+                                             current_B=5,
+                                             desired_A=ScraperBase.scale_A,
+                                             desired_B=ScraperBase.scale_B,
+                                             default=BOOL_VALUES.NOT_AVAILABLE,
+                                             decimal=True)
+
+    product = d[DataKeys.PRODUCT_SCORE]
+    d[DataKeys.PRODUCT_SCORE] = convert_scale(product,
+                                              current_A=0,
+                                              current_B=5,
+                                              desired_A=ScraperBase.scale_A,
+                                              desired_B=ScraperBase.scale_B,
+                                              default=BOOL_VALUES.NOT_AVAILABLE,
+                                              decimal=True)

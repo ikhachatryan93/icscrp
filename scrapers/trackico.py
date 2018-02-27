@@ -1,23 +1,20 @@
-import re
-import sys
 import math
-import tqdm
-
+import re
+from multiprocessing.dummy import Lock
 from multiprocessing.pool import ThreadPool
 from urllib.request import URLError
 from urllib.request import urljoin
-from multiprocessing.dummy import Lock
 
-from utilities.utils import load_page
+import tqdm
 
+from scrapers.base_scraper import ScraperBase
+from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
 from scrapers.data_keys import SOURCES
-from scrapers.data_keys import BOOL_VALUES
-from scrapers.base_scraper import ScraperBase
+from scrapers.dataprocessor import convert_scale
 from utilities.proxy_generator import get_paied_proxies
+from utilities.utils import load_page
 from utilities.utils import load_page_via_proxies
-
-from scrapers.dataprocessor import process_date_type
 
 
 class TrackIco(ScraperBase):
@@ -205,3 +202,16 @@ class TrackIco(ScraperBase):
         TrackIco.process(data)
 
         return data
+
+    @staticmethod
+    def process_scores(d):
+        overall = d[DataKeys.OVERALL_SCORES]
+        d[DataKeys.OVERALL_SCORES] = convert_scale(overall,
+                                                   current_A=0,
+                                                   current_B=5,
+                                                   desired_A=ScraperBase.scale_A,
+                                                   desired_B=ScraperBase.scale_B,
+                                                   default=BOOL_VALUES.NOT_AVAILABLE,
+                                                   decimal=True)
+
+

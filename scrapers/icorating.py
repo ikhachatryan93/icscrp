@@ -131,32 +131,34 @@ class IcoRating(ScraperBase):
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'description'))
 
-        bs = load_page(url + '/details', self.html_parser)
         try:
-            info_map = {'Pre-ICO start date:': DataKeys.PRE_ICO_START,
-                        'Pre-ICO end date:': DataKeys.PRE_ICO_END,
-                        'Hard cap:': DataKeys.HARD_CAP,
-                        'ICO start date:': DataKeys.ICO_START,
-                        'ICO end date:': DataKeys.ICO_END,
-                        'Soft cap:': DataKeys.SOFT_CAP,
-                        'Ticker:': DataKeys.TOKEN_NAME,
-                        'ICO Platform:': DataKeys.PLATFORM,
-                        'Token price in USD:': DataKeys.ICO_PRICE,
-                        'Accepted Currencies:': DataKeys.ACCEPTED_CURRENCIES,
-                        'Country Limitations:': DataKeys.COUNTRIES_RESTRICTED,
-                        'Token Standard:': DataKeys.TOKEN_STANDARD,
-                        'Registration Country:': DataKeys.COUNTRY}
-
-            rows = bs.find_all('td', text=re.compile('.*:$'))
-            for row in rows:
-                try:
-                    if row.text in info_map:
-                        value = row.find_next_sibling().text.strip()
-                        data[info_map[row.text]] = value
-                except:
-                    continue
+            bs = load_page(url + '/details', self.html_parser)
         except:
             self.logger.error(self.NOT_FOUND_MSG.format(url + '/details', 'info table'))
+
+        info_map = {'Pre-ICO start date:': DataKeys.PRE_ICO_START,
+                    'Pre-ICO end date:': DataKeys.PRE_ICO_END,
+                    'Hard cap:': DataKeys.HARD_CAP,
+                    'ICO start date:': DataKeys.ICO_START,
+                    'ICO end date:': DataKeys.ICO_END,
+                    'Soft cap:': DataKeys.SOFT_CAP,
+                    'Ticker:': DataKeys.TOKEN_NAME,
+                    'ICO Platform:': DataKeys.PLATFORM,
+                    'Token price in USD:': DataKeys.ICO_PRICE,
+                    'Accepted Currencies:': DataKeys.ACCEPTED_CURRENCIES,
+                    'Country Limitations:': DataKeys.COUNTRIES_RESTRICTED,
+                    'Token Standard:': DataKeys.TOKEN_STANDARD,
+                    'Registration Country:': DataKeys.COUNTRY}
+
+        rows = bs.find_all('td', text=re.compile('.*:$'))
+        for row in rows:
+            try:
+                key = row.text.strip()
+                if key in info_map:
+                    value = row.find_next_sibling().text.strip()
+                    data[info_map[key]] = value
+            except AttributeError:
+                continue
 
         IcoRating.process(data)
 
@@ -167,23 +169,23 @@ class IcoRating(ScraperBase):
         data[DataKeys.ROI_SCORE] = convert_scale(data[DataKeys.ROI_SCORE],
                                                  current_A=0,
                                                  current_B=8,
-                                                 desired_A=0,
-                                                 desired_B=10,
+                                                 desired_A=ScraperBase.scale_A,
+                                                 desired_B=ScraperBase.scale_B,
                                                  default=BOOL_VALUES.NOT_AVAILABLE,
                                                  decimal=True)
 
         data[DataKeys.HYPE_SCORE] = convert_scale(data[DataKeys.HYPE_SCORE],
                                                   current_A=0,
                                                   current_B=5,
-                                                  desired_A=0,
-                                                  desired_B=10,
+                                                  desired_A=ScraperBase.scale_A,
+                                                  desired_B=ScraperBase.scale_B,
                                                   default=BOOL_VALUES.NOT_AVAILABLE,
                                                   decimal=True)
 
         data[DataKeys.RISK_SCORE] = convert_scale(data[DataKeys.RISK_SCORE],
                                                   current_A=0,
                                                   current_B=5,
-                                                  desired_A=0,
-                                                  desired_B=10,
+                                                  desired_A=ScraperBase.scale_A,
+                                                  desired_B=ScraperBase.scale_B,
                                                   default=BOOL_VALUES.NOT_AVAILABLE,
                                                   decimal=True)

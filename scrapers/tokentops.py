@@ -7,7 +7,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from scrapers.base_scraper import ScraperBase
+from scrapers.dataprocessor import convert_scale
 from scrapers.data_keys import DataKeys
+from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import SOURCES
 from utilities.utils import click
 from utilities.utils import load_page
@@ -18,10 +20,6 @@ class TokenTops(ScraperBase):
     def __init__(self, max_threads=1, max_browsers=0):
 
         super(TokenTops, self).__init__(max_threads, max_browsers)
-
-        # should be 'selenium' or 'bs4'
-        # TODO: add scrapy support
-        self.engine = 'bs4'
 
         # should be 'firefox', 'chrome' or 'phantomjs'(headless)
         self.browser_name = 'firefox'
@@ -34,41 +32,60 @@ class TokenTops(ScraperBase):
         self.NOT_FOUND_MSG = "From {}: could not find {}"
 
         # location of listings in website, may be more than one
-        self.urls = ['https://www.tokentops.com/ico/?page=1']
+        self.urls = ['https://www.tokentops.com/ico/?page=1',
+                     'https://www.tokentops.com/ico/?page=2',
+                     'https://www.tokentops.com/ico/?page=3',
+                     'https://www.tokentops.com/ico/?page=4',
+                     'https://www.tokentops.com/ico/?page=5',
+                     'https://www.tokentops.com/ico/?page=6',
+                     'https://www.tokentops.com/ico/?page=7',
+                     'https://www.tokentops.com/ico/?page=8',
+                     'https://www.tokentops.com/ico/?page=9',
+                     'https://www.tokentops.com/ico/?page=10',
+                     'https://www.tokentops.com/ico/?page=11',
+                     'https://www.tokentops.com/ico/?page=12',
+                     'https://www.tokentops.com/ico/?page=13',
+                     'https://www.tokentops.com/ico/?page=14',
+                     'https://www.tokentops.com/ico/?page=15',
+                     'https://www.tokentops.com/ico/?page=16',
+                     'https://www.tokentops.com/ico/?page=17',
+                     'https://www.tokentops.com/ico/?page=18',
+                     'https://www.tokentops.com/ico/?page=19',
+                     'https://www.tokentops.com/ico/?page=20']
         self.domain = 'https://www.tokentops.com/'
 
     def scrape_listings(self, url):
         try:
-            driver = setup_browser(self.browser_name)
+            # driver = setup_browser(self.browser_name)
+            bs = load_page(url, self.html_parser)
         except:
             self.logger.critical('Error while scraping listings from %s', url)
             return
 
-        driver.get(url)
-        urls = []
-        wait = WebDriverWait(driver, 5)
-        try:
-            while True:
-                elements = driver.find_elements_by_css_selector('.t_wrap.t_line')
-                for e in elements:
-                    urls.append(e.get_attribute('href'))
-                next_ = wait.until(EC.presence_of_element_located(
-                    (By.XPATH, '//a[contains(text(), "»") and @class="pagination__link"]')))
-                if next_:
-                    click(driver, next_)
-                else:
-                    break
-        except:
-            if len(urls) == 0:
-                self.logger.critical('Could not extract listings from'.format(url))
-
-        # bs = load_page(url, self.html_parser)
-        # tags = bs.find('div', {'class': 'upcoming-sec__main'}).findAll('a', {'target': '_blank'})
+        # driver.get(url)
         # urls = []
-        # for tag in tags:
-        #     urls.append(tag['href'])
+        # wait = WebDriverWait(driver, 5)
+        # try:
+        #     while True:
+        #         elements = driver.find_elements_by_css_selector('.t_wrap.t_line')
+        #         for e in elements:
+        #             urls.append(e.get_attribute('href'))
+        #         next_ = wait.until(EC.presence_of_element_located(
+        #             (By.XPATH, '//a[contains(text(), "»") and @class="pagination__link"]')))
+        #         if next_:
+        #             click(driver, next_)
+        #         else:
+        #             break
+        # except:
+        #     if len(urls) == 0:
+        #         self.logger.critical('Could not extract listings from'.format(url))
 
-        driver.quit()
+        tags = bs.find('div', {'class': 'upcoming-sec__main'}).findAll('a', {'target': '_blank'})
+        urls = []
+        for tag in tags:
+            urls.append(tag['href'])
+
+        # driver.quit()
 
         return urls
 
@@ -175,5 +192,22 @@ class TokenTops(ScraperBase):
         TokenTops.process(data)
         return data
 
+    @staticmethod
+    def process_scores(d):
+        overall = d[DataKeys.OVERALL_SCORES]
+        d[DataKeys.OVERALL_SCORES] = convert_scale(overall,
+                                                   current_A=0,
+                                                   current_B=5,
+                                                   desired_A=ScraperBase.scale_A,
+                                                   desired_B=ScraperBase.scale_B,
+                                                   default=BOOL_VALUES.NOT_AVAILABLE,
+                                                   decimal=True)
 
-
+        user = d[DataKeys.USER_SCORE]
+        d[DataKeys.USER_SCORE] = convert_scale(user,
+                                               current_A=0,
+                                               current_B=5,
+                                               desired_A=ScraperBase.scale_A,
+                                               desired_B=ScraperBase.scale_B,
+                                               default=BOOL_VALUES.NOT_AVAILABLE,
+                                               decimal=True)

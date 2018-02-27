@@ -66,8 +66,8 @@ def main():
 
     # try:
     #     scraper = IcoBench(Configs.get('max_threads'))
-    #     data2 = scraper.scrape_website()
-    #     write_to_csv("icobench2.csv", data2)
+    #     data = scraper.scrape_website()
+    #     write_to_csv("icobench.csv", data)
     # except:
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
@@ -82,8 +82,8 @@ def main():
 
     # try:
     #     scraper = TokenTops(Configs.get('max_threads'))
-    #     tokentops_data = scraper.scrape_website()
-    #     write_to_csv("tokentops.csv", tokentops_data)
+    #     data = scraper.scrape_website()
+    #     write_to_csv("tokentops.csv", data)
     # except:
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
@@ -107,8 +107,8 @@ def main():
 
     # try:
     #     scraper = IcoRating(Configs.get('max_threads'))
-    #     icorating_data = scraper.scrape_website()
-    #     write_to_csv("icorating1.csv", icorating_data)
+    #     data = scraper.scrape_website()
+    #     write_to_csv("icorating1.csv", data)
     # except:
     #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
 
@@ -125,9 +125,13 @@ def main():
         data = Telegram.extract_telegram_info(data, BOOL_VALUES.NOT_AVAILABLE)
     #    data = Bitcointalk.extract_bitcointalk(data)
 
-        data = DataProcessor.process_country_names(data, [DataKeys.COUNTRY, DataKeys.COUNTRIES_RESTRICTED],
+        data = DataProcessor.process_country_names(data, [DataKeys.COUNTRY],
                                                    keep_unconverted=True, default_value=BOOL_VALUES.NOT_AVAILABLE,
                                                    words_unspecified=['Unspecified'])
+
+        data = DataProcessor.process_country_names(data, [DataKeys.COUNTRIES_RESTRICTED],
+                                                   keep_unconverted=True, default_value=BOOL_VALUES.NOT_AVAILABLE,
+                                                   words_unspecified=['Unspecified'], separator=',')
 
         data = DataProcessor.merge_conflicts(data=data,
                                              eq_keys=[DataKeys.NAME, DataKeys.TOKEN_NAME],

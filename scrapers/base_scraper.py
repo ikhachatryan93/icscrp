@@ -13,6 +13,9 @@ from utilities.utils import Configs
 
 # Abstract class
 class ScraperBase:
+    scale_A = 0
+    scale_B = 10
+
     def __init__(self, threads=1, browsers=1):
 
         self.max_threads = threads
@@ -55,6 +58,7 @@ class ScraperBase:
             logging.info('Scraping data from {}'.format(url))
             listings += (self.scrape_listings(url))
 
+        listings = list(set(listings))
         # debugging
         if Configs.get('max_items') != -1:
             return [data for data in self.scrape_profiles(listings[:Configs.get('max_items')]) if data is not None]
@@ -63,10 +67,11 @@ class ScraperBase:
 
     @staticmethod
     def process_scores(d):
+        print('Using asasa')
         pass
 
-    @staticmethod
-    def process(data):
+    @classmethod
+    def process(cls, data):
         s = data[DataKeys.ICO_START] = process_date_type(data[DataKeys.ICO_START], n_a=BOOL_VALUES.NOT_AVAILABLE)
         e = data[DataKeys.ICO_END] = process_date_type(data[DataKeys.ICO_END], n_a=BOOL_VALUES.NOT_AVAILABLE)
         data[DataKeys.PRE_ICO_START] = process_date_type(data[DataKeys.PRE_ICO_START], n_a=BOOL_VALUES.NOT_AVAILABLE)
@@ -75,4 +80,14 @@ class ScraperBase:
         if s != BOOL_VALUES.NOT_AVAILABLE and e != BOOL_VALUES.NOT_AVAILABLE:
             data[DataKeys.STATUS] = process_time_period_status(s, e, BOOL_VALUES.NOT_AVAILABLE)
 
-        ScraperBase.process_scores(data)
+        cls.process_scores(data)
+
+    # @staticmethod
+    # def download_icons(data):
+    #
+    #     for d in data:
+    #         if d[DataKeys.LOGO_URL] is not BOOL_VALUES.NOT_AVAILABLE:
+
+
+
+
