@@ -21,33 +21,32 @@ class MySQL:
         except:
             raise Exception('Error occurred during SQL connection. Reason: {}'.format(traceback.format_exc()))
 
-    def insert(self, data):
-        # data should be a list of dictionaries [{table_name:{col1:value1,col2:value2}},{...}]
-        for dictionary in data:
-            table = list(dictionary.keys())[0]
-            columns = ",".join(dictionary[table].keys())
-            values = ",".join(str(i) for i in dict[table].values())
-            query = "insert into {0} ({1}) values ({2})".format(table, columns, values)
-
-            try:
-                self.cursor.execute(query)
-                self.conn.commit()
-            except:
-                raise Exception('Error occurred during insertion. Reason: {}'.format(traceback.format_exc()))
+    def insert(self, query):
+        try:
+            self.cursor.execute(query)
+            self.conn.commit()
+        except:
+            raise Exception('Error occurred during insertion. Reason: {}'.format(traceback.format_exc()))
 
     def read_row(self, query):
+        try:
+            self.cursor.execute(query)
+            out = self.cursor.fetchone()
 
-        self.cursor.execute(query)
-        out = self.cursor.fetchone()
+            return out
 
-        return out
+        except:
+            raise Exception('Error occurred during read single row. Reason: {}'.format(traceback.format_exc()))
 
     def read_all_rows(self, query):
+        try:
+            self.cursor.execute(query)
+            out = self.cursor.fetchall()
 
-        self.cursor.execute(query)
-        out = self.cursor.fetchall()
+            return out
 
-        return out
+        except:
+            raise Exception('Error occurred during reading rows. Reason: {}'.format(traceback.format_exc()))
 
     def disconnect(self):
 
