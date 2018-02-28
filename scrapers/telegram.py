@@ -3,10 +3,11 @@ from multiprocessing.dummy import Lock
 from multiprocessing.pool import ThreadPool
 
 import tqdm
+import re
 
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
-from utilities.utils import load_page
+from utilities.utils import load_page_as_text
 
 # TODO: add config file for this attrs
 __html_parser = 'lxml'
@@ -26,13 +27,14 @@ def scrape_info(d):
         d[DataKeys.TELEGRAM_SUBSCRIBERS] = __n_a
 
     try:
-        bs = load_page(url, __html_parser)
+        content = load_page_as_text(url, __html_parser)
     except:
         __logger.warning('Could not load telegram page')
         return
 
     try:
-        tel_subscr_str = bs.find('div', {'class': 'tgme_page_extra'}).text
+        tel_subscr_str = re.search('tgme_page_extra">\s*((\d+\s?)+)\s*members', content).group(1)
+        #bs.find('div', {'class': 'tgme_page_extra'}).text
         num_tel_sub = int(''.join(filter(str.isdigit, tel_subscr_str)))
 
         with __mutex:

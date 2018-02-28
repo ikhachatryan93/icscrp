@@ -16,7 +16,7 @@ class SOURCES:
     ICOBAZAAR = 'icobazaar'
     ICOBENCH = 'icobench'
     TRACKICO = 'trackico'
-    TOKENTOPS = 'topentops'
+    TOKENTOPS = 'tokentops'
     ICOMARKS = 'icomarks'
     ICORATING = 'icoratings'
 
@@ -67,18 +67,19 @@ class DataKeys:
     ICO_PRICE = 'ico_token_price'
     KYC = 'kyc'
     WHITELIST = 'whitelist'
+    WHITEPAPER = 'whitepaper'
 
     # social pages
     GITHUB_URL = 'github_page'
     MEDIUM_URL = 'medium_page'
     LINKEDIN_URL = 'linkedin_page'
     TWITTER_URL = 'twitter_page'
-    INSTAGRAM_URL = 'instagram_url'
+    INSTAGRAM_URL = 'instagram_page'
     FACEBOOK_URL = 'facebook_page'
     WEBSITE = 'webpage'
     LOGO_URL = 'logo_url'
-    SLACK_URL = 'slack_url'
-    YOUTUBE_URL = 'youtube_url'
+    SLACK_URL = 'slack_page'
+    YOUTUBE_URL = 'youtube_page'
 
     # telefram
     TELEGRAM_URL = 'telegram_page'

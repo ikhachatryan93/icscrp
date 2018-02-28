@@ -222,6 +222,34 @@ def rand_user_agnet():
     return u
 
 
+def load_page_as_png(url, rec=True):
+    user_agent = {'user-agent': rand_user_agnet()}
+    req = urllib3.PoolManager(10, headers=user_agent)
+
+    try:
+        html = req.urlopen('GET', url, timeout=15)
+        if html.status != 200:
+            if rec:
+                return load_page_as_text(url, rec=False)
+            raise Exception('Bad request status from: {}'.format(url))
+    except urllib3.exceptions.MaxRetryError:
+        raise Exception('Timeout error while requesting: {}'.format(url))
+
+    content_type = html.headers.get('Content-Type')
+    if not content_type:
+        print('Could not find encoding from {}, using default \'utf-8\' instead '.format(url))
+        encoding = 'utf-8'
+    else:
+        encoding = content_type.split('charset=')[-1]
+
+    try:
+        html_content = html.data.decode(encoding)
+    except LookupError:
+        html_content = html.data.decode('utf-8')
+
+    return html_content
+
+
 def load_page_as_text(url, rec=True):
     user_agent = {'user-agent': rand_user_agnet()}
     req = urllib3.PoolManager(10, headers=user_agent)
@@ -258,7 +286,7 @@ def load_page(url, parser):
 def load_page_via_proxies_as_text(url, proxy, rec=True):
     proxy_prop = proxy.split(':')
 
-    header = make_headers(user_agent=rand_user_agnet())  # , proxy_basic_auth=proxy_prop[2] + ':' + proxy_prop[3])
+    header = make_headers(user_agent=rand_user_agnet(), proxy_basic_auth=proxy_prop[2] + ':' + proxy_prop[3])
     req = urllib3.ProxyManager('https://' + proxy_prop[0] + ':' + proxy_prop[1], headers=header)
 
     try:

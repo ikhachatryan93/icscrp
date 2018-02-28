@@ -3,10 +3,11 @@ import re
 import time
 
 from scrapers.base_scraper import ScraperBase
+from scrapers.dataprocessor import convert_scale
 from scrapers.data_keys import DataKeys
+from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import SOURCES
-from utilities.proxy_generator import get_paied_proxies
-from utilities.utils import load_page_via_proxies
+from utilities.utils import load_page
 from utilities.utils import setup_browser
 
 
@@ -20,9 +21,6 @@ class IcoBazaar(ScraperBase):
         self.__max_threads = 1
 
         self.__logger = logging
-        self.__proxies = get_paied_proxies()
-        self.__pr_len = len(self.__proxies)
-        self.__proxy_id = 0
 
         # should be 'firefox', 'chrome' or 'phantomjs'(headless)
         self.__browser_name = 'firefox'
@@ -62,13 +60,7 @@ class IcoBazaar(ScraperBase):
         data[DataKeys.SOURCE] = SOURCES.ICOBAZAAR
 
         try:
-            ip = self.__proxies[self.__proxy_id % self.__pr_len]
-            with self.mutex:
-                self.__proxy_id += 1
-            if self.__proxy_id > 1000000:
-                with self.mutex:
-                    self.__proxy_id = 0
-            bs_ = load_page_via_proxies(url, 'lxml', ip)
+            bs_ = load_page(url, 'lxml')
         except:
             self.logger.error('Could not scrape profile {}'.format(url))
             return
@@ -123,25 +115,19 @@ class IcoBazaar(ScraperBase):
 
         # scrap data from "community" tab of particular listing
         try:
-            ip = self.__proxies[self.__proxy_id % self.__pr_len]
-            with self.mutex:
-                self.__proxy_id += 1
-            if self.__proxy_id > 1000000:
-                with self.mutex:
-                    self.__proxy_id = 0
-            bs__ = load_page_via_proxies(url + '/community', self.__html_parser, ip)
+            bs__ = load_page(url + '/community', self.__html_parser)
         except AttributeError:
             self.logger.error('Could not scrape community of profile {}'.format(url))
             return
 
-            # ----rating list
+        # ----rating list
         try:
-            rating_list = bs__.find('div', {'class': 'com-rating__list'}).find_all('div',
-                                                                                 {'class': 'com-rating__list-element'})
+            rating_list = bs__.find('div', {'class': 'com-rating__list'}).find_all('div', {'class': 'com-rating__list-element'})
             for rate in rating_list:
                 if rate.find('span').text.lower() == 'team':
-                    data[DataKeys.TEAM_SCORE] = \
-                        re.findall('\d{1,3}\%', rate.find('div', {'class': 'progress-bar'}).find('span')['style'])[0]
+                    data[DataKeys.TEAM_SCORE] = re.findall(
+                        '\d{1,3}\%', rate.find('div', {'class': 'progress-bar'}).find('span')['style']
+                    )[0].strip('%')
         except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'Team'))
 
@@ -168,3 +154,23 @@ class IcoBazaar(ScraperBase):
         IcoBazaar.process(data)
 
         return data
+
+    @staticmethod
+    def process_scores(d):
+        overall = d[DataKeys.OVERALL_SCORES]
+        d[DataKeys.OVERALL_SCORES] = convert_scale(overall,
+                                                   current_A=0,
+                                                   current_B=5,
+                                                   desired_A=ScraperBase.scale_A,
+                                                   desired_B=ScraperBase.scale_B,
+                                                   default=BOOL_VALUES.NOT_AVAILABLE,
+                                                   decimal=True)
+
+        team = d[DataKeys.TEAM_SCORE]
+        d[DataKeys.TEAM_SCORE] = convert_scale(team,
+                                               current_A=0,
+                                               current_B=100,
+                                               desired_A=0,
+                                               desired_B=10,
+                                               default=BOOL_VALUES.NOT_AVAILABLE,
+                                               decimal=True)
