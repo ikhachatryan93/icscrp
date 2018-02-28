@@ -9,16 +9,17 @@ from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import SOURCES
 from utilities.utils import load_page
 from utilities.utils import setup_browser
+from utilities.utils import load_image
 
 
 class IcoBazaar(ScraperBase):
 
     def __init__(self, max_threads=1, max_browsers=0):
 
-        super(IcoBazaar, self).__init__(max_threads, max_browsers)
+        super(IcoBazaar, self).__init__(1, max_browsers)
 
         # TODO: Read from icobazaar.cnf config file
-        self.__max_threads = 1
+        self.__max_extract = 500
 
         self.__logger = logging
 
@@ -60,7 +61,7 @@ class IcoBazaar(ScraperBase):
         data[DataKeys.SOURCE] = SOURCES.ICOBAZAAR
 
         try:
-            bs_ = load_page(url, 'lxml')
+            bs_ = load_page(url, self.__html_parser)
         except:
             self.logger.error('Could not scrape profile {}'.format(url))
             return
@@ -77,15 +78,21 @@ class IcoBazaar(ScraperBase):
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO description'))
 
         try:
-            data[DataKeys.LOGO_URL] = bs_.find('div', {'class': 'com-header__logo'}).img['src'].strip()
-
-        except AttributeError:
+            logo_url = bs_.find('div', {'class': 'com-header__logo'}).img['src'].strip()
+            data[DataKeys.LOGO_PATH] = load_image(logo_url, ScraperBase.logo_tmp_path)
+        except (AttributeError, KeyError):
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO logo'))
+        except Exception as e:
+            self.logger.error('could not download {} logo with: {}'.format(url, str(e)))
 
         try:
             data[DataKeys.OVERALL_SCORES] = bs_.find('div', {'class': 'ico-rating'})['rating']
-        except AttributeError:
-            self.logger.error(self.NOT_FOUND_MSG.format(url, 'Rating'))
+        except:
+            try:
+                bs_ = load_page(url, self.__html_parser)
+                data[DataKeys.OVERALL_SCORES] = bs_.find('div', {'class': 'ico-rating'})['rating']
+            except (AttributeError, KeyError):
+                self.logger.error(self.NOT_FOUND_MSG.format(url, 'Rating'))
 
         map_ = {'start': DataKeys.ICO_START, 'end': DataKeys.ICO_END,
                 'cap': DataKeys.HARD_CAP, 'goal': DataKeys.SOFT_CAP,
@@ -122,7 +129,8 @@ class IcoBazaar(ScraperBase):
 
         # ----rating list
         try:
-            rating_list = bs__.find('div', {'class': 'com-rating__list'}).find_all('div', {'class': 'com-rating__list-element'})
+            rating_list = bs__.find('div', {'class': 'com-rating__list'}).find_all('div', {
+                'class': 'com-rating__list-element'})
             for rate in rating_list:
                 if rate.find('span').text.lower() == 'team':
                     data[DataKeys.TEAM_SCORE] = re.findall(

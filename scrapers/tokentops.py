@@ -13,6 +13,7 @@ from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import SOURCES
 from utilities.utils import click
 from utilities.utils import load_page
+from utilities.utils import load_image
 from utilities.utils import setup_browser
 
 
@@ -109,9 +110,11 @@ class TokenTops(ScraperBase):
         # logo
         try:
             logo_path = bs.find('img', {'class': 'page-details__logo'})['src']
-            data[DataKeys.LOGO_URL] = urljoin(self.domain, logo_path)
+            data[DataKeys.LOGO_PATH] = load_image(urljoin(self.domain, logo_path), ScraperBase.logo_tmp_path)
         except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO logo'))
+        except Exception as e:
+            self.logger.error('could not download {} logo with: {}'.format(url, str(e)))
 
         # overall scores
         try:

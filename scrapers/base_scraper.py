@@ -3,6 +3,7 @@ from multiprocessing import Lock
 from multiprocessing.pool import ThreadPool
 
 import tqdm
+import os
 
 from scrapers.data_keys import DataKeys
 from scrapers.data_keys import BOOL_VALUES
@@ -13,6 +14,9 @@ from utilities.utils import Configs
 
 # Abstract class
 class ScraperBase:
+    csv_data = (os.getcwd() + os.sep + 'data' + os.sep + 'csv_data')
+    logo_path = (os.getcwd() + os.sep + 'data' + os.sep + 'icons')
+    logo_tmp_path = (os.getcwd() + os.sep + 'data' + os.sep + 'icons_tmp')
     scale_A = 0
     scale_B = 10
 
@@ -47,10 +51,10 @@ class ScraperBase:
     def scrape_profiles(self, pages):
         logging.info("Scraping profiles from {}".format(self.domain))
         pool = ThreadPool(self.max_threads)
-        profile_datas = list(tqdm.tqdm(pool.imap(self.scrape_profile, pages), total=len(pages)))
+        profile_data = list(tqdm.tqdm(pool.imap(self.scrape_profile, pages), total=len(pages)))
         pool.close()
         pool.join()
-        return profile_datas
+        return profile_data
 
     def scrape_website(self):
         listings = []
@@ -67,7 +71,6 @@ class ScraperBase:
 
     @staticmethod
     def process_scores(d):
-        print('Using asasa')
         pass
 
     @classmethod
@@ -81,13 +84,3 @@ class ScraperBase:
             data[DataKeys.STATUS] = process_time_period_status(s, e, BOOL_VALUES.NOT_AVAILABLE)
 
         cls.process_scores(data)
-
-    # @staticmethod
-    # def download_icons(data):
-    #
-    #     for d in data:
-    #         if d[DataKeys.LOGO_URL] is not BOOL_VALUES.NOT_AVAILABLE:
-
-
-
-

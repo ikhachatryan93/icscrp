@@ -9,6 +9,7 @@ from scrapers.data_keys import ICO_STATUS
 from scrapers.data_keys import SOURCES
 from scrapers.dataprocessor import process_date_type_without_year
 from utilities.utils import load_page
+from utilities.utils import load_image
 from scrapers.dataprocessor import convert_scale
 
 
@@ -82,12 +83,15 @@ class IcoDrops(ScraperBase):
         except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'description'))
 
-        # icon
+        # logo
         try:
             url_ = bs.select_one('div.ico-main-info').parent.find('img')['data-src']
-            data[DataKeys.LOGO_URL] = urljoin(self.domain, url_)
+            data[DataKeys.LOGO_PATH] = load_image(urljoin(self.domain, url_), ScraperBase.logo_tmp_path)
         except AttributeError:
-            self.logger.error(self.NOT_FOUND_MSG.format(url, 'logo url'))
+            self.logger.error(self.NOT_FOUND_MSG.format(url, 'could not get logo url'))
+        except Exception as e:
+            self.logger.error('could not download {} logo with: {}'.format(url, str(e)))
+
 
         # soc links
         try:
@@ -234,7 +238,7 @@ class IcoDrops(ScraperBase):
         data[DataKeys.OVERALL_SCORES] = convert_scale(overall_num,
                                                       current_A=0,
                                                       current_B=5,
-                                                      desired_A=ScraperBase.scalse_A,
+                                                      desired_A=ScraperBase.scale_A,
                                                       desired_B=ScraperBase.scale_B,
                                                       default=BOOL_VALUES.NOT_AVAILABLE,
                                                       decimal=True)

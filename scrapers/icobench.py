@@ -11,9 +11,11 @@ from scrapers.base_scraper import ScraperBase
 from scrapers.dataprocessor import convert_scale
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
+from scrapers.data_keys import ICO_STATUS
 from scrapers.data_keys import SOURCES
 from utilities.utils import load_page
 from utilities.utils import load_page_via_proxies
+from utilities.utils import load_image
 from utilities.proxy_generator import get_paied_proxies
 
 
@@ -201,23 +203,31 @@ class IcoBench(ScraperBase):
             ############ date info ##############
             try:
                 # get label of date (TIME if available otherwise STATUS which can be UNKNOWN and ENDED)
-                date_label = financial_divs.find('label', text=re.compile('TIME', re.IGNORECASE))
+                date_label = financial_divs.find('label', text='Time')
+                pre = False
                 if not date_label:
-                    date_label = financial_divs.find('label', text=re.compile('STATUS', re.IGNORECASE))
+                    date_label = financial_divs.find('label', text=re.compile('PreICO time', re.IGNORECASE))
+                    if date_label:
+                        pre = True
+                    else:
+                        date_label = financial_divs.find('label', text=re.compile('STATUS', re.IGNORECASE))
 
                 date_number = date_label.find_next_sibling('div', {'class': 'number'}, text=True)
                 div_text = date_number.text.strip()
-                if div_text.upper() == 'UNKNOWN' or div_text.upper() == 'ENDED':
-                    data[DataKeys.ICO_START] = div_text
-                    data[DataKeys.ICO_END] = div_text
+                if div_text.upper() == 'ENDED':
+                    data[DataKeys.STATUS] = ICO_STATUS.ENDED
+                elif div_text.upper() == 'UNKNOWN':
+                    pass
                 else:
                     date_info = re.findall(r'\d{4}[\-.]\d{2}[\-.]\d{2}', date_number.find_next_sibling().text)
                     if date_info:
-                        data[DataKeys.ICO_START] = date_info[0]
-                        data[DataKeys.ICO_END] = date_info[1]
+                        if pre:
+                            data[DataKeys.PRE_ICO_START] = date_info[0]
+                            data[DataKeys.PRE_ICO_END] = date_info[1]
+                        else:
+                            data[DataKeys.ICO_START] = date_info[0]
+                            data[DataKeys.ICO_END] = date_info[1]
             except Exception as e:
-                data[DataKeys.ICO_START] = BOOL_VALUES.NOT_AVAILABLE
-                data[DataKeys.ICO_END] = BOOL_VALUES.NOT_AVAILABLE
                 self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Date Info') + ' with message: '.format(str(e)))
             ############## end of date info #################
 
@@ -281,9 +291,11 @@ class IcoBench(ScraperBase):
 
         try:
             logo_link = bs.find('div', {'class': 'image'}).find('img')
-            data[DataKeys.LOGO_URL] = urljoin(self.domain, logo_link['src'])
+            data[DataKeys.LOGO_PATH] = load_image(urljoin(self.domain, logo_link['src']), ScraperBase.logo_tmp_path)
         except (AttributeError, KeyError):
             self.logger.warning(self.NOT_FOUND_MSG.format('Logo url'))
+        except Exception as e:
+            self.logger.error('could not download {} logo with: {}'.format(url, str(e)))
 
         IcoBench.process(data)
 

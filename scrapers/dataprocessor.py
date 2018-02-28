@@ -5,6 +5,7 @@ import re
 from typing import Union
 
 from scrapers.data_keys import BOOL_VALUES
+from scrapers.data_keys import DataKeys
 from scrapers.data_keys import ICO_STATUS
 from utilities.country_keys import iso_name_from_unofficial
 
@@ -91,7 +92,7 @@ def process_date_type(date, n_a):
     return fdate
 
 
-def process_country_names(data, country_keys, keep_unconverted=True, default_value=None, words_unspecified=None, separator=None):
+def process_country_names(data, country_keys, keep_unconverted=True, default_value=None, words_unspecified=None, separator='UNbELIEVABbe SEPARATOR'):
     """
     Format the country names to alfa_3 format of ISO 3166 standard
 
@@ -122,7 +123,7 @@ def process_country_names(data, country_keys, keep_unconverted=True, default_val
                 if alpha_3_names:
                     alpha_3_names += ', '
 
-                country = cntr.strip()
+                country = cntr.strip().strip('.').strip(',')
                 if country in special_cases:
                     alpha_3_names += special_cases[country]
                     continue
@@ -131,10 +132,6 @@ def process_country_names(data, country_keys, keep_unconverted=True, default_val
                     if len(country) == 3:
                         alpha_3_names += country
                         continue
-
-                    # not in iso standard
-                    if country == 'UK':
-                        country = 'United Kingdom'
 
                     try:
                         alpha_3_names += pycountry.countries.get(name=country).alpha_3
@@ -147,7 +144,14 @@ def process_country_names(data, country_keys, keep_unconverted=True, default_val
                             except KeyError:
                                 if not keep_unconverted:
                                     alpha_3_names += default_value
-                                logging.error('Could not find alfa_3 format for country name: {}'.format(country))
+                                else:
+                                    alpha_3_names += country
+
+                                logging.error(
+                                    'Could not find alfa_3 format for country name: {} from {} url'.format(
+                                        country, d[DataKeys.PROFILE_URL]
+                                    )
+                                )
                                 continue
 
             d[country_key] = alpha_3_names
@@ -182,7 +186,7 @@ def __pop_similar_subdata(d1, data, eq_keys):
             idxs.append(idx)
 
     sub_eq_data = []
-    for idx in idxs:
+    for idx in sorted(idxs, reverse=True):
         sub_eq_data.append(data.pop(idx))
 
     return sub_eq_data if len(sub_eq_data) > 0 else None

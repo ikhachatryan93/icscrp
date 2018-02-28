@@ -76,8 +76,8 @@ class DataKeys:
     TWITTER_URL = 'twitter_page'
     INSTAGRAM_URL = 'instagram_page'
     FACEBOOK_URL = 'facebook_page'
-    WEBSITE = 'webpage'
-    LOGO_URL = 'logo_url'
+    WEBSITE = 'web_page'
+    LOGO_PATH = 'logo'
     SLACK_URL = 'slack_page'
     YOUTUBE_URL = 'youtube_page'
 

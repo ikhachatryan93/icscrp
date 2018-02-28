@@ -12,6 +12,7 @@ from scrapers.data_keys import DataKeys
 from scrapers.data_keys import SOURCES
 from utilities.utils import click
 from utilities.utils import load_page
+from utilities.utils import load_image
 from utilities.utils import setup_browser
 
 
@@ -29,7 +30,7 @@ class IcoMarks(ScraperBase):
         self.mutex = Lock()
 
         self.NOT_FOUND_MSG = "From {}: could not find {}"
-        self.max_pagination = 5
+        self.max_pagination = 50
 
         # location of listings in website, may be more than one
         self.urls = ['https://www.icomarks.com/icos?sort=rating-desc']
@@ -93,9 +94,11 @@ class IcoMarks(ScraperBase):
         # logo
         try:
             logo_path = bs.find('img', {'itemprop': 'url'})['src']
-            data[DataKeys.LOGO_URL] = urljoin(self.domain, logo_path)
-        except:
+            data[DataKeys.LOGO_PATH] = load_image(urljoin(self.domain, logo_path), ScraperBase.logo_tmp_path)
+        except (AttributeError, KeyError):
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO logo'))
+        except Exception as e:
+            self.logger.error('could not download {} logo with: {}'.format(url, str(e)))
 
         # overall scores
         try:

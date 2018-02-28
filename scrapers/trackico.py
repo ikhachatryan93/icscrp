@@ -14,6 +14,7 @@ from scrapers.data_keys import SOURCES
 from scrapers.dataprocessor import convert_scale
 from utilities.proxy_generator import get_paied_proxies
 from utilities.utils import load_page
+from utilities.utils import load_image
 from utilities.utils import load_page_via_proxies
 
 
@@ -130,9 +131,11 @@ class TrackIco(ScraperBase):
 
         # ICO Logo
         try:
-            data[DataKeys.LOGO_URL] = urljoin(self.domain, header.img['src'])
+            data[DataKeys.LOGO_PATH] = load_image(urljoin(self.domain, header.img['src']), ScraperBase.logo_tmp_path)
         except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO logo'))
+        except Exception as e:
+            self.logger.error('could not download {} logo with: {}'.format(url, str(e)))
 
         try:
             data[DataKeys.DESCRIPTION] = bs.find('small', {'class': 'subtitle'}).find('p').text.strip()

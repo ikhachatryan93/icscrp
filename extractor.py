@@ -1,15 +1,20 @@
 #! /bin/env python
 import argparse
 import os
+import time
 import sys
 import traceback
 import logging
+import shutil
 
 from utilities.logging import configure_logging
 from utilities.utils import Configs
 from utilities.utils import write_to_csv
 from utilities.utils import write_to_excel
+from utilities.utils import write_data_to_db
+from utilities.utils import MySQL
 
+from scrapers.icodrops import ScraperBase
 from scrapers.icorating import IcoRating
 from scrapers.icobench import IcoBench
 from scrapers.icobazaar import IcoBazaar
@@ -47,120 +52,92 @@ def parse_arguments():
 def main():
     configure_logging(Configs.get('logging_handler'))
     parse_arguments()
+    shutil.rmtree(ScraperBase.logo_tmp_path, ignore_errors=True)
 
-    data = []
-    # try:
-    #     scraper = IcoMarks(Configs.get('max_threads'))
-    #     data = scraper.scrape_website()
-    #     data = Reddit.exctract_reddit(data)
-    #     write_to_csv("icomarks.csv", data)
-    # except:
-    #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    all_data = []
+    scrapers = [IcoBench]#, IcoMarks, IcoDrops, TrackIco, IcoRating, TokenTops]
+    for scraper in scrapers:
 
-    # try:
-    #     scraper = IcoBench(Configs.get('max_threads'))
-    #     data1 = scraper.scrape_website()
-    #     write_to_csv("icobench1.csv", data1)
-    # except:
-    #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+        folder = ScraperBase.csv_data + os.sep + scraper.__name__
+        if not os.path.exists(folder):
+            os.makedirs(folder)
 
-    # try:
-    #     scraper = IcoBench(Configs.get('max_threads'))
-    #     data = scraper.scrape_website()
-    #     write_to_csv("icobench.csv", data)
-    # except:
-    #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+        extractor = scraper(Configs.get('max_threads'))
+        try:
+            __data = extractor.scrape_website()
+            all_data += __data
+            write_to_csv(folder + os.sep + time.strftime("%Y_%b_%d-%H%M%S") + '.csv', __data)
+        except:
+            logging.error('{} scraper failed: \n {}'.format(extractor.__name__, traceback.format_exc()))
 
-    # data = data1 + data2
-
-    # try:
-    #     scraper = IcoMarks(Configs.get('max_threads'))
-    #     icomarks_data = scraper.scrape_website()
-    #     write_to_csv("icomarks.csv", icomarks_data)
-    # except:
-    #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
-
-    # try:
-    #     scraper = TokenTops(Configs.get('max_threads'))
-    #     data = scraper.scrape_website()
-    #     write_to_csv("tokentops.csv", data)
-    # except:
-    #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
-
-    #
-    # try:
-    #     scraper = IcoBazaar(Configs.get('max_threads'))
-    #     data += scraper.scrape_website()
-    #     write_to_csv("icobazaar.csv", data)
-    #     # write_to_excel('icobazaar.xlsx',dict_list=data)
-    # except:
-    #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
-    #
+    logging.info('Totally {} profiles has been extracted')
 
     try:
-        scraper = IcoDrops(Configs.get('max_threads'))
-        data = scraper.scrape_website()
-        write_to_csv('icodrops.csv', data)
+        logging.info('Obtaining telegram subscribers info...')
+        all_data = Telegram.extract_telegram_info(all_data, BOOL_VALUES.NOT_AVAILABLE)
     except:
-        logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
-
-
-    # try:
-    #     scraper = IcoRating(Configs.get('max_threads'))
-    #     data = scraper.scrape_website()
-    #     write_to_csv("icorating1.csv", data)
-    # except:
-    #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
-
+        logging.critical('Failed to while scraping telegram pages')
 
     # try:
-    #     scraper = TrackIco(Configs.get('max_threads'))
-    #     data = scraper.scrape_website()
-    #     # data = Reddit.exctract_reddit(data)
-    #     write_to_excel('trackico.csv', dict_list=data)
+    #     logging.info('Obtaining reddit data...')
+    #     all_data = Reddit.exctract_reddit(all_data)
     # except:
-    #     logging.error('Scraper failed: \n {}'.format(traceback.format_exc()))
+    #     logging.critical('Failed to while scraping reddit pages')
+
+    # try:
+    #     logging.info('Obtaining bitcointalk data...')
+    #     all_data = Bitcointalk.extract_bitcointalk(all_data)
+    # except:
+    #     logging.critical('Failed to while scraping bitcointalk pages')
+
+    # remove old icons and replace with new ones
+    shutil.rmtree(ScraperBase.logo_path, ignore_errors=True)
+    os.renames(ScraperBase.logo_tmp_path, ScraperBase.logo_path)
 
     try:
-        data = Telegram.extract_telegram_info(data, BOOL_VALUES.NOT_AVAILABLE)
-    #    data = Bitcointalk.extract_bitcointalk(data)
+        all_data = DataProcessor.process_country_names(all_data, [DataKeys.COUNTRY],
+                                                       keep_unconverted=True, default_value=BOOL_VALUES.NOT_AVAILABLE,
+                                                       words_unspecified=['Unspecified'],
+                                                       separator='THIS SEPARATOR WILL '
+                                                                 'NEVER WORK')
 
-        data = DataProcessor.process_country_names(data, [DataKeys.COUNTRY],
-                                                   keep_unconverted=True, default_value=BOOL_VALUES.NOT_AVAILABLE,
-                                                   words_unspecified=['Unspecified'])
+        all_data = DataProcessor.process_country_names(all_data, [DataKeys.COUNTRIES_RESTRICTED],
+                                                       keep_unconverted=True, default_value=BOOL_VALUES.NOT_AVAILABLE,
+                                                       words_unspecified=['Unspecified'], separator=',')
 
-        data = DataProcessor.process_country_names(data, [DataKeys.COUNTRIES_RESTRICTED],
-                                                   keep_unconverted=True, default_value=BOOL_VALUES.NOT_AVAILABLE,
-                                                   words_unspecified=['Unspecified'], separator=',')
-
-        data = DataProcessor.merge_conflicts(data=data,
-                                             eq_keys=[DataKeys.NAME, DataKeys.TOKEN_NAME],
-                                             priority_key=DataKeys.SOURCE,
-                                             # TODO: define best priority
-                                             priority_table={SOURCES.ICOBENCH: 0,
-                                                             SOURCES.ICOMARKS: 1,
-                                                             SOURCES.ICODROPS: 2,
-                                                             SOURCES.TOKENTOPS: 3,
-                                                             SOURCES.TRACKICO: 4,
-                                                             SOURCES.ICORATING: 5},
-                                             n_a=BOOL_VALUES.NOT_AVAILABLE)
+        all_data = DataProcessor.merge_conflicts(data=all_data,
+                                                 eq_keys=[DataKeys.NAME, DataKeys.TOKEN_NAME],
+                                                 priority_key=DataKeys.SOURCE,
+                                                 # TODO: define best priority
+                                                 priority_table={SOURCES.ICOBENCH: 0,
+                                                                 SOURCES.ICOMARKS: 1,
+                                                                 SOURCES.ICODROPS: 2,
+                                                                 SOURCES.TOKENTOPS: 3,
+                                                                 SOURCES.TRACKICO: 4,
+                                                                 SOURCES.ICORATING: 5,
+                                                                 SOURCES.ICOBAZAAR: 6},
+                                                 n_a=BOOL_VALUES.NOT_AVAILABLE)
 
     except:
         logging.error('Processor failed: \n {}'.format(traceback.format_exc()))
         exit(2)
 
-    write_to_csv('final.csv', data)
+    all_folder = ScraperBase.csv_data + os.sep + 'total'
+    # if not os.path.exists(''):
+    #     os.makedirs(all_folder)
+    #write_to_csv(all_folder + os.sep + time.strftime("%Y_%b_%d-%H%M%S") + '.csv', all_data)
 
-
-# try:
-#    host, port, user, password, db = parse_arguments()
-#    mysql_db = MySQL(host, port, user, password, db)
-#    mysql_db.connect()
-#    mysql_db.insert(final_data)
-#    mysql_db.disconnect()
-# except Exception as e:
-#    logging.error(str(e))
-#    exit(3)
+    try:
+        mydb = MySQL(host='80.87.203.19', port=3306, user='user6427_ico', password="so8oepso8oep", db="user6427_ico_db")
+        # mydb = MySQL(host="localhost", port=3306, user="root", password="3789", db="new_db")
+        write_data_to_db(
+            db=mydb,
+            table_list=['tokens', 'token_details', 'scores', 'social_pages', 'bitcointalk', 'subredits'],
+            data=all_data
+        )
+    except:
+        logging.error(traceback.format_exc())
+        exit(3)
 
 
 if __name__ == "__main__":

@@ -3,8 +3,13 @@ import json
 import os
 import platform
 import sys
-import re
+import urllib.request
+import uuid
+import shutil
+import traceback
 from urllib.parse import urlsplit
+from utilities.mysql_wrapper import MySQL
+from scrapers.data_keys import BOOL_VALUES
 
 import bs4
 import urllib3
@@ -222,32 +227,32 @@ def rand_user_agnet():
     return u
 
 
-def load_page_as_png(url, rec=True):
+def load_image(url, path, rec=True):
+    type_ = url.split('/')[-1].split('.')[-1]
+    name = str(uuid.uuid4())
+    filename = '{}.{}'.format(name, type_)
+
+    full_path = path + os.sep + filename
+
+    if not os.path.exists(path):
+        os.makedirs(path)
+
     user_agent = {'user-agent': rand_user_agnet()}
-    req = urllib3.PoolManager(10, headers=user_agent)
+    req = urllib3.PoolManager(1, headers=user_agent)
 
     try:
         html = req.urlopen('GET', url, timeout=15)
         if html.status != 200:
             if rec:
-                return load_page_as_text(url, rec=False)
+                return load_image(url, path, rec=False)
             raise Exception('Bad request status from: {}'.format(url))
     except urllib3.exceptions.MaxRetryError:
         raise Exception('Timeout error while requesting: {}'.format(url))
 
-    content_type = html.headers.get('Content-Type')
-    if not content_type:
-        print('Could not find encoding from {}, using default \'utf-8\' instead '.format(url))
-        encoding = 'utf-8'
-    else:
-        encoding = content_type.split('charset=')[-1]
+    with open(full_path, 'wb') as f:
+        f.write(html.data)
 
-    try:
-        html_content = html.data.decode(encoding)
-    except LookupError:
-        html_content = html.data.decode('utf-8')
-
-    return html_content
+    return filename
 
 
 def load_page_as_text(url, rec=True):
@@ -350,3 +355,43 @@ def setup_virtual_desktop():
             display.start()
     except Exception as e:
         raise (str(e))
+
+
+def write_data_to_db(db, table_list=None, data=None):
+    db.connect()
+    for d in data:
+        for table_name in table_list:
+            try:
+                # ------getting columns of tables in where data will be written
+                query = 'DESCRIBE {}'.format(table_name)
+                out = db.read_all_rows(query)
+                col_names = []
+                for i in out:
+                    if i[0] != "id" and i[0] != 'token_id' and i[0] != 'created_at' and i[0] != 'updated_at':
+                        col_names.append(i[0])
+                # ------preparing query for insertion
+                val_list = []
+                for col_name in col_names:
+                    if d[col_name] != BOOL_VALUES.NOT_AVAILABLE:
+                        val_list.append(d[col_name])
+                    else:
+                        val_list.append('null')
+
+                columns = ",".join(col_names)
+                values = ",".join(val_list)
+                if table_name != 'tokens':
+                    token_id = db.read_row('select id from tokens order by id desc limit 1')[0]
+                    write_query = "insert into {} ({},token_id) values ({},{})".format(
+                        table_name, columns, values, token_id
+                    )
+                else:
+                    write_query = "insert into {} ({}) values ({})".format(
+                        table_name, columns, values
+                    )
+
+                db.insert(write_query)
+            except:
+                db.disconnect()
+                raise Exception("Problem during DB insertion, reason: {}".format(traceback.format_exc()))
+
+    db.disconnect()
