@@ -20,6 +20,9 @@ class ScraperBase:
     scale_A = 0
     scale_B = 10
 
+    def whoami(self):
+        return str(type(self).__name__)
+
     def __init__(self, threads=1, browsers=1):
 
         self.max_threads = threads

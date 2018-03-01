@@ -55,20 +55,21 @@ def main():
     shutil.rmtree(ScraperBase.logo_tmp_path, ignore_errors=True)
 
     all_data = []
-    scrapers = [IcoBench]#, IcoMarks, IcoDrops, TrackIco, IcoRating, TokenTops]
+    scrapers = [TrackIco]  # ,IcoBench, IcoMarks, IcoRating, TokenTops, IcoDrops, TrackIco]
     for scraper in scrapers:
 
-        folder = ScraperBase.csv_data + os.sep + scraper.__name__
+        extractor = scraper(Configs.get('max_threads'))
+        folder = ScraperBase.csv_data + os.sep + extractor.whoami()
         if not os.path.exists(folder):
             os.makedirs(folder)
 
-        extractor = scraper(Configs.get('max_threads'))
         try:
             __data = extractor.scrape_website()
             all_data += __data
+
             write_to_csv(folder + os.sep + time.strftime("%Y_%b_%d-%H%M%S") + '.csv', __data)
         except:
-            logging.error('{} scraper failed: \n {}'.format(extractor.__name__, traceback.format_exc()))
+            logging.error('{} scraper failed: \n {}'.format(extractor.whoami(), traceback.format_exc()))
 
     logging.info('Totally {} profiles has been extracted')
 
@@ -125,14 +126,14 @@ def main():
     all_folder = ScraperBase.csv_data + os.sep + 'total'
     # if not os.path.exists(''):
     #     os.makedirs(all_folder)
-    #write_to_csv(all_folder + os.sep + time.strftime("%Y_%b_%d-%H%M%S") + '.csv', all_data)
+    # write_to_csv(all_folder + os.sep + time.strftime("%Y_%b_%d-%H%M%S") + '.csv', all_data)
 
     try:
         mydb = MySQL(host='80.87.203.19', port=3306, user='user6427_ico', password="so8oepso8oep", db="user6427_ico_db")
         # mydb = MySQL(host="localhost", port=3306, user="root", password="3789", db="new_db")
         write_data_to_db(
             db=mydb,
-            table_list=['tokens', 'token_details', 'scores', 'social_pages', 'bitcointalk', 'subredits'],
+            table_list=['tokens', 'token_details', 'scores', 'social_pages', 'bitcointalk', 'subreddits'],
             data=all_data
         )
     except:

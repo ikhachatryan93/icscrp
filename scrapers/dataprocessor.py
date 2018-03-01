@@ -10,7 +10,8 @@ from scrapers.data_keys import ICO_STATUS
 from utilities.country_keys import iso_name_from_unofficial
 
 logger = logging
-date_format = '%d-%m-%Y'
+#date_format = '%d-%m-%Y'
+date_format = '%Y-%m-%d'
 
 
 def process_time_period_status(sdate, edate, n_a):

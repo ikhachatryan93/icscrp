@@ -10,6 +10,7 @@ import traceback
 from urllib.parse import urlsplit
 from utilities.mysql_wrapper import MySQL
 from scrapers.data_keys import BOOL_VALUES
+import time
 
 import bs4
 import urllib3
@@ -378,15 +379,16 @@ def write_data_to_db(db, table_list=None, data=None):
                         val_list.append('null')
 
                 columns = ",".join(col_names)
-                values = ",".join(val_list)
+                values = ','.join(val if val == 'null' else '"{}"'.format(val) for val in val_list)
                 if table_name != 'tokens':
                     token_id = db.read_row('select id from tokens order by id desc limit 1')[0]
-                    write_query = "insert into {} ({},token_id) values ({},{})".format(
-                        table_name, columns, values, token_id
+                    write_query = 'insert into {} ({},token_id, created_at) values ({},{},"{}")'.format(
+                        table_name, columns, values, token_id, time.strftime("%Y-%m-%d %H:%M:%S")
                     )
+
                 else:
-                    write_query = "insert into {} ({}) values ({})".format(
-                        table_name, columns, values
+                    write_query = 'insert into {} ({}, created_at) values ({}, "{}")'.format(
+                        table_name, columns, values, time.strftime("%Y-%m-%d %H:%M:%S")
                     )
 
                 db.insert(write_query)

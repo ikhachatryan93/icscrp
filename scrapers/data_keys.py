@@ -38,7 +38,7 @@ class DataKeys:
     TOKEN_NAME = 'ticker'
     PROFILE_URL = 'ico_url'
     DESCRIPTION = 'description'
-    TOKEN_STANDARD = 'standard'
+    TOKEN_STANDARD = "standart"
     PLATFORM = 'platform'
     PRE_ICO_START = 'pre_ico_start'
     PRE_ICO_END = 'pre_ico_end'
@@ -104,7 +104,7 @@ class DataKeys:
 
     HYPE_SCORE = 'hype_score'
     RISK_SCORE = 'risk_score'
-    USER_SCORE = 'users_rating'
+    USER_SCORE = 'user_review_score'
 
     # icobench ratings
     ICO_PROFILE_SCORE = 'ico_profile_score'

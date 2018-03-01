@@ -122,73 +122,102 @@ class TrackIco(ScraperBase):
             self.logger.warning('Could not scrape profile {}'.format(url))
             return
 
-        header = bs.find('div', {'class': 'header-title'})
         # ICO NAME
         try:
-            data[DataKeys.NAME] = header.find('h1').text
+            data[DataKeys.NAME] = bs.select_one('h1.h2').text.strip()
         except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO name'))
 
         # ICO Logo
         try:
-            data[DataKeys.LOGO_PATH] = load_image(urljoin(self.domain, header.img['src']), ScraperBase.logo_tmp_path)
+            logo = bs.select_one('div.img-thumbnail.align-self-center.m-2').find('img')['src']
+            if 'data:image' not in logo:
+                data[DataKeys.LOGO_PATH] = load_image(urljoin(self.domain, logo, ScraperBase.logo_tmp_path))
+            else:
+                data[DataKeys.LOGO_PATH] = load_image(logo, ScraperBase.logo_tmp_path)
+
         except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO logo'))
         except Exception as e:
             self.logger.error('could not download {} logo with: {}'.format(url, str(e)))
 
         try:
-            data[DataKeys.DESCRIPTION] = bs.find('small', {'class': 'subtitle'}).find('p').text.strip()
+            data[DataKeys.DESCRIPTION] = bs.select_one('div.fs-14').text.strip()
         except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO description'))
 
         try:
-            pre_ico_dates = bs.find('span', {'class': 'fa fa-calendar-plus-o fs-30'}).findNextSibling('span').text
+            pre_ico_dates = bs.find('th', text='Pre-Sale').findNextSibling('td').text.strip()
             data[DataKeys.PRE_ICO_START] = pre_ico_dates.split('-')[0].strip()
             data[DataKeys.PRE_ICO_END] = pre_ico_dates.split('-')[1].strip()
-
         except (AttributeError, IndexError):
             self.logger.debug(self.NOT_FOUND_MSG.format(url, 'Pre ICO dates'))
 
         try:
-            ico_dates = bs.find('span', {'class': 'fa fa-calendar fs-30'}).findNextSibling('span').text
+            ico_dates = bs.find('th', text='Token Sale').findNextSibling('td').text.strip()
             data[DataKeys.ICO_START] = ico_dates.split('-')[0].strip()
             data[DataKeys.ICO_END] = ico_dates.split('-')[1].strip()
         except (AttributeError, IndexError):
             self.logger.debug(self.NOT_FOUND_MSG.format(url, 'ICO dates'))
 
         try:
-            data[DataKeys.COUNTRY] = bs.find('span', {'class': 'fa fa-globe fs-30'}).findNextSibling(
-                'span').text.strip()
+            data[DataKeys.COUNTRY] = bs.find('th', text='Country').findNextSibling('td').find('a').text.strip()
         except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO country'))
 
         try:
-            data[DataKeys.PLATFORM] = bs.find('span', {'class': 'fa fa-server fs-30'}).findNextSibling(
-                'span').text.strip()
+            data[DataKeys.PLATFORM] = bs.find('th', text='Platform').findNextSibling('td').find('a').text.strip()
         except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO platform'))
 
         try:
-            data[DataKeys.OVERALL_SCORES] = bs.find('span', {'class': 'fa fa-heart fs-30'}).findNextSibling(
-                'span').find('strong').text.strip()
+            data[DataKeys.TOKEN_NAME] = bs.find('th', text='Token').findNextSibling('td').text.strip()
         except AttributeError:
-            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO Rating'))
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO token name'))
+
+        try:
+            data[DataKeys.OVERALL_SCORES] = bs.select_one('div.fs-60.fw-400.text-primary').text.strip()
+        except AttributeError:
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO overall rating'))
 
         # getting social pages
         # TODO: maybe will be necessary to add other community types
-        map_ = {'homepage': DataKeys.WEBSITE, 'bitcointalk': DataKeys.BITCOINTALK_URL,
+        map_ = {'bitcointalk': DataKeys.BITCOINTALK_URL,
                 'twitter': DataKeys.TWITTER_URL, 'facebook': DataKeys.FACEBOOK_URL,
                 'telegram': DataKeys.TELEGRAM_URL, 'github': DataKeys.GITHUB_URL,
                 'reddit': DataKeys.REDDIT_URL, 'linkedin': DataKeys.LINKEDIN_URL,
+                'homepage': DataKeys.WEBSITE, 'whitepaper': DataKeys.WHITEPAPER,
                 'slack': DataKeys.SLACK_URL, 'blog': DataKeys.MEDIUM_URL,
                 'youtube': DataKeys.YOUTUBE_URL, 'instagram': DataKeys.INSTAGRAM_URL}
         try:
             social_pages = bs.find('div', {'class': 'card card-body text-center'}).find_all('a')
+
             for page in social_pages:
-                if re.sub('[^\w]', '', page['onclick'].split('link-')[1]) != 'whitepaper':
+                soc = re.sub('[^\w]', '', page['onclick'].split('link-')[1]).lower()
+                if soc in map_:
                     try:
-                        key = map_[re.sub('[^\w]', '', page['onclick'].split('link-')[1]).strip()]
+                        key = map_[soc]
+                    except KeyError:
+                        continue
+
+                    try:
+                        value = page['href'].strip()
+                        data[key] = value
+                    except AttributeError:
+                        self.logger.warning('No url for {} social page'.format(key))
+                else:
+                    continue
+        except:
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Social pages'))
+
+        try:
+            social_pages = bs.find('div', {'class': 'card card-body text-center'}).find_all('a')
+
+            for page in social_pages:
+                soc = re.sub('[^\w]', '', page['onclick'].split('button-')[1]).lower()
+                if soc in map_:
+                    try:
+                        key = map_[soc]
                     except KeyError:
                         continue
 

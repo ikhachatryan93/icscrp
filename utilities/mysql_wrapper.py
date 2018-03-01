@@ -16,7 +16,7 @@ class MySQL:
     def connect(self):
         try:
             self.conn = pymysql.connect(host=self.host, port=self.port, user=self.user, password=self.password,
-                                        db=self.db)
+                                        db=self.db, charset='utf8')
             self.cursor = self.conn.cursor()
         except:
             raise Exception('Error occurred during SQL connection. Reason: {}'.format(traceback.format_exc()))
