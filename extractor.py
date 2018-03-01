@@ -55,7 +55,8 @@ def main():
     shutil.rmtree(ScraperBase.logo_tmp_path, ignore_errors=True)
 
     all_data = []
-    scrapers = [TrackIco]  # ,IcoBench, IcoMarks, IcoRating, TokenTops, IcoDrops, TrackIco]
+    scrapers = [IcoMarks]
+    #scrapers = [IcoDrops, IcoBench, IcoMarks, IcoRating, TokenTops, IcoDrops]
     for scraper in scrapers:
 
         extractor = scraper(Configs.get('max_threads'))
@@ -93,7 +94,10 @@ def main():
 
     # remove old icons and replace with new ones
     shutil.rmtree(ScraperBase.logo_path, ignore_errors=True)
-    os.renames(ScraperBase.logo_tmp_path, ScraperBase.logo_path)
+    try:
+        os.renames(ScraperBase.logo_tmp_path, ScraperBase.logo_path)
+    except FileNotFoundError:
+        logging.warning('Could not update icons, something went wrong')
 
     try:
         all_data = DataProcessor.process_country_names(all_data, [DataKeys.COUNTRY],
@@ -124,9 +128,13 @@ def main():
         exit(2)
 
     all_folder = ScraperBase.csv_data + os.sep + 'total'
-    # if not os.path.exists(''):
-    #     os.makedirs(all_folder)
-    # write_to_csv(all_folder + os.sep + time.strftime("%Y_%b_%d-%H%M%S") + '.csv', all_data)
+    os.makedirs(all_folder, exist_ok=True)
+
+    try:
+        write_to_csv(all_folder + os.sep + time.strftime("%Y_%b_%d-%H%M%S") + '.csv', all_data)
+    except IndexError:
+        logging.error('Empty output data.')
+        exit(3)
 
     try:
         mydb = MySQL(host='80.87.203.19', port=3306, user='user6427_ico', password="so8oepso8oep", db="user6427_ico_db")

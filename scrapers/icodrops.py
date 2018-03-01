@@ -92,7 +92,6 @@ class IcoDrops(ScraperBase):
         except Exception as e:
             self.logger.error('could not download {} logo with: {}'.format(url, str(e)))
 
-
         # soc links
         try:
             soc_links = bs.find('div', {'class': 'soc_links'}).find_all('a')
@@ -183,6 +182,15 @@ class IcoDrops(ScraperBase):
 
     @staticmethod
     def __process(data):
+        wl = data[DataKeys.WHITELIST]
+        if wl != BOOL_VALUES.NOT_AVAILABLE:
+            if 'yes' in wl.lower():
+                data[DataKeys.WHITELIST] = BOOL_VALUES.YES
+            elif 'no' in wl.lower():
+                data[DataKeys.WHITELIST] = BOOL_VALUES.NO
+            else:
+                data[DataKeys.WHITELIST] = BOOL_VALUES.NOT_AVAILABLE
+
         data[DataKeys.ICO_START] = process_date_type_without_year(data[DataKeys.ICO_START], BOOL_VALUES.NOT_AVAILABLE)
         data[DataKeys.ICO_END] = process_date_type_without_year(data[DataKeys.ICO_END], BOOL_VALUES.NOT_AVAILABLE)
         IcoDrops.process_scores(data)

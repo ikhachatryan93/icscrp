@@ -296,7 +296,7 @@ def load_page_via_proxies_as_text(url, proxy, rec=True):
     req = urllib3.ProxyManager('https://' + proxy_prop[0] + ':' + proxy_prop[1], headers=header)
 
     try:
-        html = req.urlopen('GET', url, timeout=15)
+        html = req.urlopen('GET', url, timeout=10)
         if html.status != 200:
             if rec:
                 # print('Bad status {}, retrying'.format(url))

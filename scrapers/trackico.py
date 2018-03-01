@@ -83,8 +83,17 @@ class TrackIco(ScraperBase):
     def scrape_listings(self, url):
 
         # next page url from 'Next 'pagination tag
+        ip = self.__proxies[self.__proxy_id % self.__pr_len]
+        with self.__mutex:
+            self.__proxy_id += 1
+
+        if self.__proxy_id > 1000000:
+            with self.__mutex:
+                self.__proxy_id = 0
+
         try:
-            bs = load_page(url, self.html_parser)
+            bs = load_page_via_proxies(url, self.html_parser, ip)
+            #bs = load_page(url, self.html_parser)
         except URLError:
             self.logger.critical('Timeout error while scraping listings from %s', url)
             return
@@ -116,7 +125,7 @@ class TrackIco(ScraperBase):
                 self.__proxy_id = 0
 
         try:
-            # bs = load_page(url, self.html_parser)
+            #bs = load_page(url, self.html_parser)
             bs = load_page_via_proxies(url, self.html_parser, proxy=ip)
         except:
             self.logger.warning('Could not scrape profile {}'.format(url))
@@ -190,7 +199,7 @@ class TrackIco(ScraperBase):
                 'slack': DataKeys.SLACK_URL, 'blog': DataKeys.MEDIUM_URL,
                 'youtube': DataKeys.YOUTUBE_URL, 'instagram': DataKeys.INSTAGRAM_URL}
         try:
-            social_pages = bs.find('div', {'class': 'card card-body text-center'}).find_all('a')
+            social_pages = bs.select_one('div.flexbox.flex-wrap').find_all('a')
 
             for page in social_pages:
                 soc = re.sub('[^\w]', '', page['onclick'].split('link-')[1]).lower()

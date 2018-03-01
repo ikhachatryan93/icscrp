@@ -10,7 +10,7 @@ from scrapers.data_keys import ICO_STATUS
 from utilities.country_keys import iso_name_from_unofficial
 
 logger = logging
-#date_format = '%d-%m-%Y'
+# date_format = '%d-%m-%Y'
 date_format = '%Y-%m-%d'
 
 
@@ -49,7 +49,7 @@ def process_date_type_without_year(date, n_a):
     fdate = n_a
     for in_fmt in input_formats:
         try:
-            fdate = datetime.strptime(date, in_fmt).strftime('%d-%m')
+            fdate = '{}-{}'.format(datetime.now().year, datetime.strptime(date, in_fmt).strftime('%m-%d'))
         except ValueError:
             pass
 
@@ -93,7 +93,8 @@ def process_date_type(date, n_a):
     return fdate
 
 
-def process_country_names(data, country_keys, keep_unconverted=True, default_value=None, words_unspecified=None, separator='UNbELIEVABbe SEPARATOR'):
+def process_country_names(data, country_keys, keep_unconverted=True, default_value=None, words_unspecified=None,
+                          separator='UNbELIEVABbe SEPARATOR'):
     """
     Format the country names to alfa_3 format of ISO 3166 standard
 
@@ -280,6 +281,10 @@ def merge_conflicts(data: list, eq_keys: list, priority_key: str, priority_table
 
         if similar_subdata:
             __merge(d, similar_subdata, priority_key, priority_table, n_a)
+
+        for k, v in d.items():
+            if isinstance(v, str):
+                d[k] = v.replace('"', '').strip()
 
         merged_data.append(d)
 

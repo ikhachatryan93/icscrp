@@ -45,14 +45,8 @@ class TokenTops(ScraperBase):
                      'https://www.tokentops.com/ico/?page=10',
                      'https://www.tokentops.com/ico/?page=11',
                      'https://www.tokentops.com/ico/?page=12',
-                     'https://www.tokentops.com/ico/?page=13',
-                     'https://www.tokentops.com/ico/?page=14',
-                     'https://www.tokentops.com/ico/?page=15',
-                     'https://www.tokentops.com/ico/?page=16',
-                     'https://www.tokentops.com/ico/?page=17',
-                     'https://www.tokentops.com/ico/?page=18',
-                     'https://www.tokentops.com/ico/?page=19',
-                     'https://www.tokentops.com/ico/?page=20']
+                     'https://www.tokentops.com/ico/?page=13']
+
         self.domain = 'https://www.tokentops.com/'
 
     def scrape_listings(self, url):
