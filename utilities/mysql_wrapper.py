@@ -1,4 +1,4 @@
-import pymysql
+import pymysql as mysql
 import traceback
 
 
@@ -15,7 +15,7 @@ class MySQL:
 
     def connect(self):
         try:
-            self.conn = pymysql.connect(host=self.host, port=self.port, user=self.user, password=self.password,
+            self.conn = mysql.connect(host=self.host, port=self.port, user=self.user, password=self.password,
                                         db=self.db, charset='utf8')
             self.cursor = self.conn.cursor()
         except:
@@ -27,6 +27,12 @@ class MySQL:
             self.conn.commit()
         except:
             raise Exception('Error occurred during insertion. Reason: {}'.format(traceback.format_exc()))
+
+    def execute(self, query):
+        try:
+            self.cursor.execute(query)
+        except:
+            raise Exception('Error occurred during query execution. Reason: {}'.format(traceback.format_exc()))
 
     def read_row(self, query):
         try:

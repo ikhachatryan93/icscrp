@@ -7,6 +7,7 @@ import urllib.request
 import uuid
 import shutil
 import traceback
+import logging
 from urllib.parse import urlsplit
 from utilities.mysql_wrapper import MySQL
 from scrapers.data_keys import BOOL_VALUES
@@ -358,6 +359,16 @@ def setup_virtual_desktop():
         raise (str(e))
 
 
+def clean_db_records(db, table_list=None):
+    db.connect()
+    db.execute('SET SQL_SAFE_UPDATES = 0')
+    for table_name in table_list:
+        print(table_name)
+        db.execute('delete from {}'.format(table_name))
+        db.execute('truncate {}'.format(table_name))
+    db.disconnect()
+
+
 def write_data_to_db(db, table_list=None, data=None):
     db.connect()
     for d in data:
@@ -391,7 +402,10 @@ def write_data_to_db(db, table_list=None, data=None):
                         table_name, columns, values, time.strftime("%Y-%m-%d %H:%M:%S")
                     )
 
-                db.insert(write_query)
+                try:
+                    db.insert(write_query)
+                except:
+                    logging.error('Could not write into table {} with query {}'.format(table_name, write_query))
             except:
                 db.disconnect()
                 raise Exception("Problem during DB insertion, reason: {}".format(traceback.format_exc()))

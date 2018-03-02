@@ -181,7 +181,9 @@ def __pop_similar_subdata(d1, data, eq_keys):
     for idx, d2 in enumerate(data):
         eq = True
         for eq_key in eq_keys:
-            if d1[eq_key] != d2[eq_key]:
+            v1 = str(d1[eq_key]).upper()
+            v2 = str(d2[eq_key]).upper()
+            if v1 != v2:
                 eq = False
                 break
         if eq:

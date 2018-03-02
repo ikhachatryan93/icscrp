@@ -11,6 +11,7 @@ from utilities.logging import configure_logging
 from utilities.utils import Configs
 from utilities.utils import write_to_csv
 from utilities.utils import write_to_excel
+from utilities.utils import clean_db_records
 from utilities.utils import write_data_to_db
 from utilities.utils import MySQL
 
@@ -55,7 +56,7 @@ def main():
     shutil.rmtree(ScraperBase.logo_tmp_path, ignore_errors=True)
 
     all_data = []
-    scrapers = [IcoMarks]
+    scrapers = [IcoDrops]
     #scrapers = [IcoDrops, IcoBench, IcoMarks, IcoRating, TokenTops, IcoDrops]
     for scraper in scrapers:
 
@@ -131,22 +132,23 @@ def main():
     os.makedirs(all_folder, exist_ok=True)
 
     try:
-        write_to_csv(all_folder + os.sep + time.strftime("%Y_%b_%d-%H%M%S") + '.csv', all_data)
+        write_to_excel(all_folder + os.sep + time.strftime("%Y_%b_%d-%H%M%S") + '.csv', all_data)
     except IndexError:
         logging.error('Empty output data.')
         exit(3)
 
-    try:
-        mydb = MySQL(host='80.87.203.19', port=3306, user='user6427_ico', password="so8oepso8oep", db="user6427_ico_db")
-        # mydb = MySQL(host="localhost", port=3306, user="root", password="3789", db="new_db")
-        write_data_to_db(
-            db=mydb,
-            table_list=['tokens', 'token_details', 'scores', 'social_pages', 'bitcointalk', 'subreddits'],
-            data=all_data
-        )
-    except:
-        logging.error(traceback.format_exc())
-        exit(3)
+    # tm = time.time()
+    # try:
+    #     table_list = ['tokens', 'token_details', 'scores', 'social_pages', 'bitcointalk', 'subreddits']
+    #     mydb = MySQL(host='80.87.203.19', port=3306, user='user6427_ico', password="so8oepso8oep", db="user6427_ico_db")
+    #     clean_db_records(mydb, table_list=table_list)
+    #     # mydb = MySQL(host="localhost", port=3306, user="root", password="3789", db="new_db")
+    #     write_data_to_db(db=mydb, table_list=table_list, data=all_data)
+    # except:
+    #     logging.error(traceback.format_exc())
+    #     exit(3)
+
+    # print('DB write duration {}'.format(time.time() - tm))
 
 
 if __name__ == "__main__":
