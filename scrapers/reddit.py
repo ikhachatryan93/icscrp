@@ -98,7 +98,7 @@ class Reddit:
     @staticmethod
     def exctract_reddit(data):
 
-        for d in data:
+        for d in data[:500]:
             reddit_url = d[DataKeys.REDDIT_URL]
             if d[DataKeys.REDDIT_URL] != BOOL_VALUES.NOT_AVAILABLE and '/user/' not in reddit_url:
                 logging.info('Obtaining reddit information for {} ico'.format(d['name']))

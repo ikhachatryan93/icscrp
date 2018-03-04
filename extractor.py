@@ -56,8 +56,8 @@ def main():
     shutil.rmtree(ScraperBase.logo_tmp_path, ignore_errors=True)
 
     all_data = []
-    #scrapers = [IcoDrops]
-    scrapers = [IcoDrops, IcoBench, IcoMarks, IcoRating, TokenTops, IcoDrops]
+    scrapers = [IcoDrops]
+    # scrapers = [IcoDrops, IcoBench, IcoMarks, IcoRating, TokenTops, IcoDrops]
     for scraper in scrapers:
 
         extractor = scraper(Configs.get('max_threads'))
@@ -81,18 +81,6 @@ def main():
     except:
         logging.critical('Failed to while scraping telegram pages')
 
-    # try:
-    #     logging.info('Obtaining reddit data...')
-    #     all_data = Reddit.exctract_reddit(all_data)
-    # except:
-    #     logging.critical('Failed to while scraping reddit pages')
-
-    # try:
-    #     logging.info('Obtaining bitcointalk data...')
-    #     all_data = Bitcointalk.extract_bitcointalk(all_data)
-    # except:
-    #     logging.critical('Failed to while scraping bitcointalk pages')
-
     # remove old icons and replace with new ones
     shutil.rmtree(ScraperBase.logo_path, ignore_errors=True)
     try:
@@ -100,6 +88,7 @@ def main():
     except FileNotFoundError:
         logging.warning('Could not update icons, something went wrong')
 
+    tm = time.time()
     try:
         all_data = DataProcessor.process_country_names(all_data, [DataKeys.COUNTRY],
                                                        keep_unconverted=True, default_value=BOOL_VALUES.NOT_AVAILABLE,
@@ -127,12 +116,29 @@ def main():
     except:
         logging.error('Processor failed: \n {}'.format(traceback.format_exc()))
         exit(2)
+    logging.info('Processing is completed in : {} sec'.format(time.time() - tm))
+
+    tm = time.time()
+    try:
+        logging.info('Obtaining reddit data...')
+        all_data = Reddit.exctract_reddit(all_data)
+    except:
+        logging.critical('Failed to while scraping reddit pages')
+    logging.info('Reddit is completed in : {} sec'.format(time.time() - tm))
+
+    tm = time.time()
+    try:
+        logging.info('Obtaining bitcointalk data...')
+        all_data = Bitcointalk.extract_bitcointalk(all_data)
+    except:
+        logging.critical('Failed to while scraping bitcointalk pages')
+    logging.info('Bitcointalk is completed in : {} sec'.format(time.time() - tm))
 
     all_folder = ScraperBase.csv_data + os.sep + 'total'
     os.makedirs(all_folder, exist_ok=True)
 
     try:
-        write_to_excel(all_folder + os.sep + time.strftime("%Y_%b_%d-%H%M%S") + '.csv', all_data)
+        write_to_csv(all_folder + os.sep + time.strftime("%Y_%b_%d-%H%M%S") + '.csv', all_data)
     except IndexError:
         logging.error('Empty output data.')
         exit(3)
@@ -148,7 +154,7 @@ def main():
         logging.error(traceback.format_exc())
         exit(3)
 
-    print('DB write duration {}'.format(time.time() - tm))
+    print('DB write completed in {} sec'.format(time.time() - tm))
 
 
 if __name__ == "__main__":

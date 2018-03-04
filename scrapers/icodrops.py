@@ -1,13 +1,15 @@
 import re
 import traceback
 from urllib.request import urljoin
+from datetime import datetime
 
 from scrapers.base_scraper import ScraperBase
 from scrapers.data_keys import BOOL_VALUES
-from scrapers.data_keys import DataKeys
+from scrapers.data_keys import DataKeys as DK
 from scrapers.data_keys import ICO_STATUS
 from scrapers.data_keys import SOURCES
 from scrapers.dataprocessor import process_date_type_without_year
+from scrapers.dataprocessor import date_format
 from utilities.utils import load_page
 from utilities.utils import load_image
 from scrapers.dataprocessor import convert_scale
@@ -47,9 +49,9 @@ class IcoDrops(ScraperBase):
         return urls
 
     def scrape_profile(self, url):
-        data = DataKeys.initialize()
-        data[DataKeys.PROFILE_URL] = url
-        data[DataKeys.SOURCE] = SOURCES.ICODROPS
+        data = DK.initialize()
+        data[DK.PROFILE_URL] = url
+        data[DK.SOURCE] = SOURCES.ICODROPS
 
         try:
             bs = load_page(url, self.html_parser)
@@ -61,32 +63,32 @@ class IcoDrops(ScraperBase):
         try:
             text = bs.find('div', {'class': 'ico-main-info'}).find('h3').text
             # from "ICO NAME (ICN)" to "ICO NAME"
-            data[DataKeys.NAME] = text.strip()
+            data[DK.NAME] = text.strip()
         except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO name'))
 
         # whitepaper
         try:
-            data[DataKeys.WHITEPAPER] = bs.find('div', {'class': 'button'}, text='WHITEPAPER').parent['href']
+            data[DK.WHITEPAPER] = bs.find('div', {'class': 'button'}, text='WHITEPAPER').parent['href']
         except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO whitepaper'))
 
         # website url
         try:
-            data[DataKeys.WEBSITE] = bs.find('div', {'class': 'button'}, text='WEBSITE').parent['href']
+            data[DK.WEBSITE] = bs.find('div', {'class': 'button'}, text='WEBSITE').parent['href']
         except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'ICO website'))
 
         # description
         try:
-            data[DataKeys.DESCRIPTION] = bs.find('div', {'class': 'ico-description'}).text.strip()
+            data[DK.DESCRIPTION] = bs.find('div', {'class': 'ico-description'}).text.strip()
         except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'description'))
 
         # logo
         try:
             url_ = bs.select_one('div.ico-main-info').parent.find('img')['data-src']
-            data[DataKeys.LOGO_PATH] = load_image(urljoin(self.domain, url_), ScraperBase.logo_tmp_path)
+            data[DK.LOGO_PATH] = load_image(urljoin(self.domain, url_), ScraperBase.logo_tmp_path)
         except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'could not get logo url'))
         except Exception as e:
@@ -99,30 +101,30 @@ class IcoDrops(ScraperBase):
                 if not soc.has_attr('href'):
                     continue
                 if soc.find('i', {'class': 'fa-facebook-square'}):
-                    data[DataKeys.FACEBOOK_URL] = soc['href']
+                    data[DK.FACEBOOK_URL] = soc['href']
                 if soc.find('i', {'class': 'fa-telegram'}):
-                    data[DataKeys.TELEGRAM_URL] = soc['href']
+                    data[DK.TELEGRAM_URL] = soc['href']
                 if soc.find('i', {'class': 'fa-medium'}):
-                    data[DataKeys.MEDIUM_URL] = soc['href']
+                    data[DK.MEDIUM_URL] = soc['href']
                 if soc.find('i', {'class': 'fa-twitter'}):
-                    data[DataKeys.TWITTER_URL] = soc['href']
+                    data[DK.TWITTER_URL] = soc['href']
                 if soc.find('i', {'class': 'fa-github'}):
-                    data[DataKeys.GITHUB_URL] = soc['href']
+                    data[DK.GITHUB_URL] = soc['href']
                 if soc.find('i', {'class': 'fa-btc'}):
-                    data[DataKeys.BITCOINTALK_URL] = soc['href']
+                    data[DK.BITCOINTALK_URL] = soc['href']
                 if soc.find('i', {'class': 'fa-reddit-alien'}):
-                    data[DataKeys.REDDIT_URL] = soc['href']
+                    data[DK.REDDIT_URL] = soc['href']
                 if soc.find('i', {'class': 'fa-youtube'}):
-                    data[DataKeys.YOUTUBE_URL] = soc['href']
+                    data[DK.YOUTUBE_URL] = soc['href']
         except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'soc_links'))
 
         try:
             rating_fields = bs.find('div', {'class': 'rating-field'}).find_all('div', {'class': 'rating-box'})
-            score_map = {'HYPE RATE': DataKeys.HYPE_SCORE,
-                         'RISK RATE': DataKeys.RISK_SCORE,
-                         'ROI RATE': DataKeys.ROI_SCORE,
-                         'ICO DRPS SCORE': DataKeys.OVERALL_SCORES}
+            score_map = {'HYPE RATE': DK.HYPE_SCORE,
+                         'RISK RATE': DK.RISK_SCORE,
+                         'ROI RATE': DK.ROI_SCORE,
+                         'ICO DRPS SCORE': DK.OVERALL_SCORES}
 
             for rating in rating_fields:
                 hh = rating.findAll('p')
@@ -140,19 +142,19 @@ class IcoDrops(ScraperBase):
             if status_tag:
                 status = status_tag.text.strip()
                 if 'ended' in status:
-                    data[DataKeys.STATUS] = ICO_STATUS.ENDED
+                    data[DK.STATUS] = ICO_STATUS.ENDED
                 elif 'starts' in status:
-                    data[DataKeys.STATUS] = ICO_STATUS.UPCOMING
+                    data[DK.STATUS] = ICO_STATUS.UPCOMING
                 elif 'ends in' in status:
-                    data[DataKeys.STATUS] = ICO_STATUS.ACTIVE
+                    data[DK.STATUS] = ICO_STATUS.ACTIVE
 
         # date
         date = bs.find('h4', text=re.compile('Token Sale:*'))
         if date:
             dates = date.text.replace('Token Sale:', '').strip().split('–')
             if len(dates) == 2:
-                data[DataKeys.ICO_START] = dates[0].strip()
-                data[DataKeys.ICO_END] = dates[1].strip()
+                data[DK.ICO_START] = dates[0].strip()
+                data[DK.ICO_END] = dates[1].strip()
             else:
                 self.logger.debug(self.NOT_FOUND_MSG.format(url, 'Token date'))
         else:
@@ -160,10 +162,10 @@ class IcoDrops(ScraperBase):
 
         # info
         try:
-            info_map = {'TICKER:': DataKeys.TOKEN_NAME, 'TOKEN TYPE:': DataKeys.TOKEN_STANDARD,
-                        'ICO TOKEN PRICE:': DataKeys.ICO_PRICE, 'FUNDRAISING GOAL:': DataKeys.SOFT_CAP,
-                        'WHITELIST:': DataKeys.WHITELIST, 'KNOW YOUR CUSTOMER (KYC):': DataKeys.KYC,
-                        'ACCEPTS:': DataKeys.ACCEPTED_CURRENCIES, 'СAN\'T PARTICIPATE:': DataKeys.COUNTRIES_RESTRICTED}
+            info_map = {'TICKER:': DK.TOKEN_NAME, 'TOKEN TYPE:': DK.TOKEN_STANDARD,
+                        'ICO TOKEN PRICE:': DK.ICO_PRICE, 'FUNDRAISING GOAL:': DK.SOFT_CAP,
+                        'WHITELIST:': DK.WHITELIST, 'KNOW YOUR CUSTOMER (KYC):': DK.KYC,
+                        'ACCEPTS:': DK.ACCEPTED_CURRENCIES, 'СAN\'T PARTICIPATE:': DK.COUNTRIES_RESTRICTED}
 
             infos = bs.findAll('span', {'class': 'grey'}, text=True)
             for info in infos:
@@ -182,17 +184,42 @@ class IcoDrops(ScraperBase):
 
     @staticmethod
     def __process(data):
-        wl = data[DataKeys.WHITELIST]
+        wl = data[DK.WHITELIST]
         if wl != BOOL_VALUES.NOT_AVAILABLE:
             if 'yes' in wl.lower():
-                data[DataKeys.WHITELIST] = BOOL_VALUES.YES
+                data[DK.WHITELIST] = BOOL_VALUES.YES
             elif 'no' in wl.lower():
-                data[DataKeys.WHITELIST] = BOOL_VALUES.NO
+                data[DK.WHITELIST] = BOOL_VALUES.NO
             else:
-                data[DataKeys.WHITELIST] = BOOL_VALUES.NOT_AVAILABLE
+                data[DK.WHITELIST] = BOOL_VALUES.NOT_AVAILABLE
 
-        data[DataKeys.ICO_START] = process_date_type_without_year(data[DataKeys.ICO_START], BOOL_VALUES.NOT_AVAILABLE)
-        data[DataKeys.ICO_END] = process_date_type_without_year(data[DataKeys.ICO_END], BOOL_VALUES.NOT_AVAILABLE)
+        data[DK.ICO_START] = process_date_type_without_year(data[DK.ICO_START], BOOL_VALUES.NOT_AVAILABLE)
+        data[DK.ICO_END] = process_date_type_without_year(data[DK.ICO_END], BOOL_VALUES.NOT_AVAILABLE)
+
+        if data[DK.ICO_START] != BOOL_VALUES.NOT_AVAILABLE and data[DK.ICO_END] != BOOL_VALUES.NOT_AVAILABLE:
+            ds = datetime.strptime(data[DK.ICO_START], date_format)
+            de = datetime.strptime(data[DK.ICO_END], date_format)
+            if data[DK.STATUS] == ICO_STATUS.ENDED:
+                if ds > datetime.now():
+                    data[DK.ICO_START] = ds.replace(year=ds.year-1).strftime(date_format)
+
+                if de > datetime.now():
+                    data[DK.ICO_END] = de.replace(year=de.year-1).strftime(date_format)
+
+            if data[DK.STATUS] == ICO_STATUS.ACTIVE:
+                if ds > datetime.now():
+                    data[DK.ICO_START] = ds.replace(year=ds.year-1).strftime(date_format)
+
+                if de < datetime.now():
+                    data[DK.ICO_END] = de.replace(year=de.year+1).strftime(date_format)
+
+            if data[DK.STATUS] == ICO_STATUS.UPCOMING:
+                if ds < datetime.now():
+                    data[DK.ICO_START] = ds.replace(year=ds.year+1).strftime(date_format)
+
+                if de < datetime.now():
+                    data[DK.ICO_END] = de.replace(year=de.year+1).strftime(date_format)
+
         ScraperBase.process_urls(data)
         IcoDrops.process_scores(data)
 
@@ -205,9 +232,9 @@ class IcoDrops(ScraperBase):
                      'High': 4,
                      'Very High': 5}
 
-        roi = data[DataKeys.ROI_SCORE]
+        roi = data[DK.ROI_SCORE]
         roi_num = score_map[roi] if roi in score_map else BOOL_VALUES.NOT_AVAILABLE
-        data[DataKeys.ROI_SCORE] = convert_scale(roi_num,
+        data[DK.ROI_SCORE] = convert_scale(roi_num,
                                                  current_A=1,
                                                  current_B=5,
                                                  desired_A=ScraperBase.scale_A,
@@ -215,9 +242,9 @@ class IcoDrops(ScraperBase):
                                                  default=BOOL_VALUES.NOT_AVAILABLE,
                                                  decimal=True)
 
-        hype = data[DataKeys.HYPE_SCORE]
+        hype = data[DK.HYPE_SCORE]
         hype_num = score_map[hype] if hype in score_map else BOOL_VALUES.NOT_AVAILABLE
-        data[DataKeys.HYPE_SCORE] = convert_scale(hype_num,
+        data[DK.HYPE_SCORE] = convert_scale(hype_num,
                                                   current_A=1,
                                                   current_B=5,
                                                   desired_A=ScraperBase.scale_A,
@@ -225,9 +252,9 @@ class IcoDrops(ScraperBase):
                                                   default=BOOL_VALUES.NOT_AVAILABLE,
                                                   decimal=True)
 
-        risk = data[DataKeys.RISK_SCORE]
+        risk = data[DK.RISK_SCORE]
         risk_num = score_map[risk] if risk in score_map else BOOL_VALUES.NOT_AVAILABLE
-        data[DataKeys.RISK_SCORE] = convert_scale(risk_num,
+        data[DK.RISK_SCORE] = convert_scale(risk_num,
                                                   current_A=1,
                                                   current_B=5,
                                                   desired_A=ScraperBase.scale_A,
@@ -242,9 +269,9 @@ class IcoDrops(ScraperBase):
                        'High Interest': 4,
                        'Very High Interest': 5}
 
-        overall = data[DataKeys.OVERALL_SCORES]
+        overall = data[DK.OVERALL_SCORES]
         overall_num = overall_map[overall] if overall in overall_map else BOOL_VALUES.NOT_AVAILABLE
-        data[DataKeys.OVERALL_SCORES] = convert_scale(overall_num,
+        data[DK.OVERALL_SCORES] = convert_scale(overall_num,
                                                       current_A=0,
                                                       current_B=5,
                                                       desired_A=ScraperBase.scale_A,

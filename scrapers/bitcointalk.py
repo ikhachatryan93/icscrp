@@ -91,7 +91,7 @@ def __scrape_profile(url):
 
 
 def extract_bitcointalk(data):
-    for d in data:
+    for d in data[:500]:
         if d[DataKeys.BITCOINTALK_URL] != BOOL_VALUES.NOT_AVAILABLE:
             __logger.info('Obtainging bitcointalk information for {} ico, {}'.format(d['name'], d[DataKeys.BITCOINTALK_URL]))
 
