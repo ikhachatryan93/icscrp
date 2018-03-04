@@ -112,7 +112,7 @@ def main():
                                                        words_unspecified=['Unspecified'], separator=',')
 
         all_data = DataProcessor.merge_conflicts(data=all_data,
-                                                 eq_keys=[DataKeys.NAME, DataKeys.TOKEN_NAME],
+                                                 eq_keys=[DataKeys.ICO_START, DataKeys.TOKEN_NAME],
                                                  priority_key=DataKeys.SOURCE,
                                                  # TODO: define best priority
                                                  priority_table={SOURCES.ICOBENCH: 0,

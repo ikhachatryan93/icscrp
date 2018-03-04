@@ -163,7 +163,7 @@ class IcoDrops(ScraperBase):
             info_map = {'TICKER:': DataKeys.TOKEN_NAME, 'TOKEN TYPE:': DataKeys.TOKEN_STANDARD,
                         'ICO TOKEN PRICE:': DataKeys.ICO_PRICE, 'FUNDRAISING GOAL:': DataKeys.SOFT_CAP,
                         'WHITELIST:': DataKeys.WHITELIST, 'KNOW YOUR CUSTOMER (KYC):': DataKeys.KYC,
-                        'ACCEPTS:': DataKeys.ACCEPTED_CURRENCIES}
+                        'ACCEPTS:': DataKeys.ACCEPTED_CURRENCIES, 'СAN\'T PARTICIPATE:': DataKeys.COUNTRIES_RESTRICTED}
 
             infos = bs.findAll('span', {'class': 'grey'}, text=True)
             for info in infos:
