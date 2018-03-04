@@ -56,8 +56,8 @@ def main():
     shutil.rmtree(ScraperBase.logo_tmp_path, ignore_errors=True)
 
     all_data = []
-    scrapers = [IcoDrops]
-    #scrapers = [IcoDrops, IcoBench, IcoMarks, IcoRating, TokenTops, IcoDrops]
+    #scrapers = [IcoDrops]
+    scrapers = [IcoDrops, IcoBench, IcoMarks, IcoRating, TokenTops, IcoDrops]
     for scraper in scrapers:
 
         extractor = scraper(Configs.get('max_threads'))
@@ -137,18 +137,18 @@ def main():
         logging.error('Empty output data.')
         exit(3)
 
-    # tm = time.time()
-    # try:
-    #     table_list = ['tokens', 'token_details', 'scores', 'social_pages', 'bitcointalk', 'subreddits']
-    #     mydb = MySQL(host='80.87.203.19', port=3306, user='user6427_ico', password="so8oepso8oep", db="user6427_ico_db")
-    #     clean_db_records(mydb, table_list=table_list)
-    #     # mydb = MySQL(host="localhost", port=3306, user="root", password="3789", db="new_db")
-    #     write_data_to_db(db=mydb, table_list=table_list, data=all_data)
-    # except:
-    #     logging.error(traceback.format_exc())
-    #     exit(3)
+    tm = time.time()
+    try:
+        table_list = ['tokens', 'token_details', 'scores', 'social_pages', 'bitcointalk', 'subreddits']
+        mydb = MySQL(host='80.87.203.19', port=3306, user='user6427_ico', password="so8oepso8oep", db="user6427_ico_db")
+        clean_db_records(mydb, table_list=table_list)
+        # mydb = MySQL(host="localhost", port=3306, user="root", password="3789", db="new_db")
+        write_data_to_db(db=mydb, table_list=table_list, data=all_data)
+    except:
+        logging.error(traceback.format_exc())
+        exit(3)
 
-    # print('DB write duration {}'.format(time.time() - tm))
+    print('DB write duration {}'.format(time.time() - tm))
 
 
 if __name__ == "__main__":

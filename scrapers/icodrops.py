@@ -193,6 +193,7 @@ class IcoDrops(ScraperBase):
 
         data[DataKeys.ICO_START] = process_date_type_without_year(data[DataKeys.ICO_START], BOOL_VALUES.NOT_AVAILABLE)
         data[DataKeys.ICO_END] = process_date_type_without_year(data[DataKeys.ICO_END], BOOL_VALUES.NOT_AVAILABLE)
+        ScraperBase.process_urls(data)
         IcoDrops.process_scores(data)
 
     @staticmethod

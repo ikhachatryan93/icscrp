@@ -76,14 +76,26 @@ class ScraperBase:
     def process_scores(d):
         pass
 
+    @staticmethod
+    def process_urls(d):
+        d[DataKeys.TELEGRAM_URL] = d[DataKeys.TELEGRAM_URL].replace('http:', 'https:')
+        for key in DataKeys.get_url_keys():
+            if d[key] != BOOL_VALUES.NOT_AVAILABLE:
+                try:
+                    d[key] = d[key].split()[0]
+                except IndexError:
+                    d[key] = BOOL_VALUES.NOT_AVAILABLE
+
     @classmethod
-    def process(cls, data):
-        s = data[DataKeys.ICO_START] = process_date_type(data[DataKeys.ICO_START], n_a=BOOL_VALUES.NOT_AVAILABLE)
-        e = data[DataKeys.ICO_END] = process_date_type(data[DataKeys.ICO_END], n_a=BOOL_VALUES.NOT_AVAILABLE)
-        data[DataKeys.PRE_ICO_START] = process_date_type(data[DataKeys.PRE_ICO_START], n_a=BOOL_VALUES.NOT_AVAILABLE)
-        data[DataKeys.PRE_ICO_END] = process_date_type(data[DataKeys.PRE_ICO_END], n_a=BOOL_VALUES.NOT_AVAILABLE)
+    def process(cls, d):
+        s = d[DataKeys.ICO_START] = process_date_type(d[DataKeys.ICO_START], n_a=BOOL_VALUES.NOT_AVAILABLE)
+        e = d[DataKeys.ICO_END] = process_date_type(d[DataKeys.ICO_END], n_a=BOOL_VALUES.NOT_AVAILABLE)
+        d[DataKeys.PRE_ICO_START] = process_date_type(d[DataKeys.PRE_ICO_START], n_a=BOOL_VALUES.NOT_AVAILABLE)
+        d[DataKeys.PRE_ICO_END] = process_date_type(d[DataKeys.PRE_ICO_END], n_a=BOOL_VALUES.NOT_AVAILABLE)
 
         if s != BOOL_VALUES.NOT_AVAILABLE and e != BOOL_VALUES.NOT_AVAILABLE:
-            data[DataKeys.STATUS] = process_time_period_status(s, e, BOOL_VALUES.NOT_AVAILABLE)
+            d[DataKeys.STATUS] = process_time_period_status(s, e, BOOL_VALUES.NOT_AVAILABLE)
 
-        cls.process_scores(data)
+        ScraperBase.process_urls(d)
+
+        cls.process_scores(d)

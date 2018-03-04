@@ -1,20 +1,25 @@
 import logging
+import re
 from multiprocessing.dummy import Lock
 from multiprocessing.pool import ThreadPool
 
 import tqdm
-import re
 
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
-from utilities.utils import load_page_as_text
+from utilities.proxy_generator import get_paied_proxies
+from utilities.utils import load_page_via_proxies_as_text
 
 # TODO: add config file for this attrs
 __html_parser = 'lxml'
-__max_threads = 20
+__max_threads = 10
 __logger = logging
 __mutex = Lock()
 __n_a = BOOL_VALUES.NOT_AVAILABLE
+
+__proxies = get_paied_proxies()
+__pr_len = len(__proxies)
+__proxy_id = 0
 
 
 def scrape_info(d):
@@ -26,15 +31,24 @@ def scrape_info(d):
         d[DataKeys.TELEGRAM_URL] = __n_a
         d[DataKeys.TELEGRAM_SUBSCRIBERS] = __n_a
 
+    global __proxy_id
     try:
-        content = load_page_as_text(url, __html_parser)
+        ip = __proxies[__proxy_id % __pr_len]
+        with __mutex:
+            __proxy_id += 1
+
+        if __proxy_id > 1000000:
+            with __mutex:
+                __proxy_id = 0
+
+        content = load_page_via_proxies_as_text(url, ip)
     except:
         __logger.warning('Could not load telegram page')
         return
 
     try:
         tel_subscr_str = re.search('tgme_page_extra">\s*((\d+\s?)+)\s*members', content).group(1)
-        #bs.find('div', {'class': 'tgme_page_extra'}).text
+        # bs.find('div', {'class': 'tgme_page_extra'}).text
         num_tel_sub = int(''.join(filter(str.isdigit, tel_subscr_str)))
 
         with __mutex:

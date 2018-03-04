@@ -32,7 +32,7 @@ def __scrape_listings(url):
     try:
         url_sample = re.match('.*topic=\d*', url).group(0)
     except:
-        __logger.warning('Found unknown bitcoinalk referance')
+        __logger.warning('Found unknown bitcoinalk reference')
         return
 
     urls = [url]
@@ -93,7 +93,7 @@ def __scrape_profile(url):
 def extract_bitcointalk(data):
     for d in data:
         if d[DataKeys.BITCOINTALK_URL] != BOOL_VALUES.NOT_AVAILABLE:
-            __logger.info('Obtainging bitcointalk information for {} ico'.format(d['name']))
+            __logger.info('Obtainging bitcointalk information for {} ico, {}'.format(d['name'], d[DataKeys.BITCOINTALK_URL]))
 
             btc_pages = __scrape_listings(d[DataKeys.BITCOINTALK_URL])
             if not btc_pages:

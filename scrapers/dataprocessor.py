@@ -3,6 +3,7 @@ import pycountry
 from datetime import datetime
 import re
 from typing import Union
+import string
 
 from scrapers.data_keys import BOOL_VALUES
 from scrapers.data_keys import DataKeys
@@ -72,7 +73,7 @@ def process_date_type(date, n_a):
     :return: %d-%m-%y formatted date, default if conversion failed.
     """
 
-    date = date.strip()
+    date = string.capwords(date.strip().lower())
 
     # special cases
     date = date.replace('Sept', 'Sep')
@@ -134,6 +135,9 @@ def process_country_names(data, country_keys, keep_unconverted=True, default_val
                     if len(country) == 3:
                         alpha_3_names += country
                         continue
+
+                    if len(cntr.split()) == 1:
+                        country = string.capwords(country)
 
                     try:
                         alpha_3_names += pycountry.countries.get(name=country).alpha_3

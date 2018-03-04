@@ -203,7 +203,7 @@ class TokenTops(ScraperBase):
         user = d[DataKeys.USER_SCORE]
         d[DataKeys.USER_SCORE] = convert_scale(user,
                                                current_A=0,
-                                               current_B=5,
+                                               current_B=100,
                                                desired_A=ScraperBase.scale_A,
                                                desired_B=ScraperBase.scale_B,
                                                default=BOOL_VALUES.NOT_AVAILABLE,

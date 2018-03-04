@@ -201,6 +201,7 @@ class IcoBench(ScraperBase):
         if financial_divs:
 
             ############ date info ##############
+            date_err = None
             try:
                 # get label of date (TIME if available otherwise STATUS which can be UNKNOWN and ENDED)
                 date_label = financial_divs.find('label', text='Time')
@@ -228,7 +229,7 @@ class IcoBench(ScraperBase):
                             data[DataKeys.ICO_START] = date_info[0]
                             data[DataKeys.ICO_END] = date_info[1]
             except Exception as e:
-                self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Date Info') + ' with message: '.format(str(e)))
+                date_err = self.NOT_FOUND_MSG.format(url, 'Date Info') + ' with message: '.format(str(e))
             ############## end of date info #################
 
             #################### Overall information #####################
@@ -250,12 +251,26 @@ class IcoBench(ScraperBase):
                         info_ = financial_div.findAll('div')
                         key = info_[0].text.strip().upper()
 
+                        if key == 'ICO START':
+                            data[DataKeys.ICO_START] = info_[1].text.strip().replace('st', '').replace('nd', '').replace('th', '').replace('rd', '')
+                            date_err = None
+                        elif key == 'ICO END':
+                            data[DataKeys.ICO_END] = info_[1].text.strip().replace('st', '').replace('nd', '').replace('th', '').replace('rd', '')
+                            date_err = None
+                        elif key == 'PREICO END':
+                            data[DataKeys.ICO_END] = info_[1].text.strip().replace('st', '').replace('nd', '').replace('th', '').replace('rd', '')
+                            date_err = None
+                        elif key == 'PREICO START':
+                            data[DataKeys.ICO_END] = info_[1].text.strip().replace('st', '').replace('nd', '').replace('th', '').replace('rd', '')
+                            date_err = None
+
                         # kyc and whitelist are in one filed
                         # so this case is not as other ones
                         if key == 'WHITELIST/KYC':
                             text = info_[1].text.upper()
                             data[DataKeys.KYC] = BOOL_VALUES.YES if 'KYC' in text else BOOL_VALUES.NO
                             data[DataKeys.WHITELIST] = BOOL_VALUES.YES if 'WHITELIST' in text else BOOL_VALUES.NO
+                            continue
 
                         if key in financial_info_keys:
                             text = info_[1].text.strip()
@@ -263,6 +278,9 @@ class IcoBench(ScraperBase):
                                 data[financial_info_keys[key]] = text
                     except:
                         pass
+
+                if date_err:
+                    self.logger.warning(date_err)
 
             else:
                 self.logger.warning(self.NOT_FOUND_MSG.format(url, 'financial data 2'))

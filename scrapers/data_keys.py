@@ -33,6 +33,24 @@ class DataKeys:
 
         return data
 
+    @staticmethod
+    def get_url_keys():
+        return [DataKeys.WHITEPAPER,
+                DataKeys.WEBSITE,
+                DataKeys.GITHUB_URL,
+                DataKeys.TELEGRAM_URL,
+                DataKeys.MEDIUM_URL,
+                DataKeys.LINKEDIN_URL,
+                DataKeys.TWITTER_URL,
+                DataKeys.INSTAGRAM_URL,
+                DataKeys.FACEBOOK_URL,
+                DataKeys.WEBSITE,
+                DataKeys.LOGO_PATH,
+                DataKeys.SLACK_URL,
+                DataKeys.YOUTUBE_URL,
+                DataKeys.REDDIT_URL,
+                DataKeys.BITCOINTALK_URL]
+
     SOURCE = 'source'
     NAME = 'name'
     TOKEN_NAME = 'ticker'
