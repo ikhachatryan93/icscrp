@@ -125,13 +125,13 @@ def main():
         logging.critical('Failed to while scraping reddit pages')
     logging.info('Reddit is completed in : {} sec'.format(time.time() - tm))
 
-    tm = time.time()
-    try:
-        logging.info('Obtaining bitcointalk data...')
-        Bitcointalk.extract_bitcointalk(all_data)
-    except:
-        logging.critical('Failed to while scraping bitcointalk pages')
-    logging.info('Bitcointalk is completed in : {} sec'.format(time.time() - tm))
+    # tm = time.time()
+    # try:
+    #     logging.info('Obtaining bitcointalk data...')
+    #     Bitcointalk.extract_bitcointalk(all_data)
+    # except:
+    #     logging.critical('Failed to while scraping bitcointalk pages')
+    # logging.info('Bitcointalk is completed in : {} sec'.format(time.time() - tm))
 
     all_folder = ScraperBase.csv_data + os.sep + 'total'
     os.makedirs(all_folder, exist_ok=True)
