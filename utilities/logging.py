@@ -3,8 +3,9 @@ import os
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.CRITICAL)
+logging.getLogger("requests").setLevel(logging.CRITICAL)
+logging.getLogger("ThreadPool").setLevel(logging.CRITICAL)
 
 
 def configure_logging(handler_type):

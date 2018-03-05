@@ -76,7 +76,7 @@ def main():
 
     try:
         logging.info('Obtaining telegram subscribers info...')
-        all_data = Telegram.extract_telegram_info(all_data, BOOL_VALUES.NOT_AVAILABLE)
+        Telegram.extract_telegram_info(all_data, BOOL_VALUES.NOT_AVAILABLE)
     except:
         logging.critical('Failed to while scraping telegram pages')
 
@@ -120,7 +120,7 @@ def main():
     tm = time.time()
     try:
         logging.info('Obtaining reddit data...')
-        all_data = Reddit.exctract_reddit(all_data)
+        Reddit.exctract_reddit(all_data)
     except:
         logging.critical('Failed to while scraping reddit pages')
     logging.info('Reddit is completed in : {} sec'.format(time.time() - tm))
@@ -128,7 +128,7 @@ def main():
     tm = time.time()
     try:
         logging.info('Obtaining bitcointalk data...')
-        all_data = Bitcointalk.extract_bitcointalk(all_data)
+        Bitcointalk.extract_bitcointalk(all_data)
     except:
         logging.critical('Failed to while scraping bitcointalk pages')
     logging.info('Bitcointalk is completed in : {} sec'.format(time.time() - tm))
