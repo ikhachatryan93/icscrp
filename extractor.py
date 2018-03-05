@@ -56,8 +56,7 @@ def main():
     shutil.rmtree(ScraperBase.logo_tmp_path, ignore_errors=True)
 
     all_data = []
-    scrapers = [IcoDrops]
-    # scrapers = [IcoDrops, IcoBench, IcoMarks, IcoRating, TokenTops, IcoDrops]
+    scrapers = [IcoDrops, IcoBench, IcoMarks, IcoRating, TokenTops, IcoDrops]
     for scraper in scrapers:
 
         extractor = scraper(Configs.get('max_threads'))

@@ -21,6 +21,7 @@ __logger = logging
 __proxies = get_paied_proxies()
 __pr_len = len(__proxies)
 __proxy_id = 0
+__max_recursion = 30
 
 
 def __scrape_listings(url):
@@ -61,7 +62,7 @@ def __scrape_listings(url):
     return random.sample(urls_, len(urls_))
 
 
-def __scrape_profile(url):
+def __scrape_profile(url, rec=0):
     try:
         global __proxy_id
         # bs = load_page_as_text(url)
@@ -85,15 +86,20 @@ def __scrape_profile(url):
     else:
         __logger.critical('Bot detection reject in {}'.format(ip))
         time.sleep(5)
-        return __scrape_profile(url)
+        rec += 1
+        if rec < __max_recursion:
+            return __scrape_profile(url, rec)
+        else:
+            return -1, -1
 
     return total_activity // total_comments, total_comments
 
 
 def extract_bitcointalk(data):
-    for d in data[:500]:
+    for d in data[:100]:
         if d[DataKeys.BITCOINTALK_URL] != BOOL_VALUES.NOT_AVAILABLE:
-            __logger.info('Obtainging bitcointalk information for {} ico, {}'.format(d['name'], d[DataKeys.BITCOINTALK_URL]))
+            __logger.info(
+                'Obtainging bitcointalk information for {} ico, {}'.format(d['name'], d[DataKeys.BITCOINTALK_URL]))
 
             btc_pages = __scrape_listings(d[DataKeys.BITCOINTALK_URL])
             if not btc_pages:
