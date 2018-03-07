@@ -1,31 +1,30 @@
 import csv
 import json
+import logging
 import os
 import platform
 import sys
-import urllib.request
-import uuid
-import shutil
-import traceback
-import logging
-from urllib.parse import urlsplit
-from utilities.mysql_wrapper import MySQL
-from scrapers.data_keys import BOOL_VALUES
 import time
+import traceback
+import uuid
+from urllib.parse import urlsplit
 
 import bs4
+import cfscrape
 import urllib3
 from configobj import ConfigObj, flatten_errors
 from fake_useragent import UserAgent
-from user_agents import parse
 from openpyxl import Workbook
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.firefox.options import Options
 from urllib3 import make_headers
+from user_agents import parse
 from validate import Validator
 from validate import VdtValueError
-from selenium.webdriver.firefox.options import Options
+
+from scrapers.data_keys import BOOL_VALUES
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "drivers"))
@@ -229,7 +228,7 @@ def rand_user_agnet():
     return u
 
 
-def load_image(url, path, rec=True):
+def load_image(url, path, rec=True, anti_bot=False):
     type_ = url.split('/')[-1].split('.')[-1]
     name = str(uuid.uuid4())
     filename = '{}.{}'.format(name, type_)
@@ -239,20 +238,24 @@ def load_image(url, path, rec=True):
     if not os.path.exists(path):
         os.makedirs(path)
 
-    user_agent = {'user-agent': rand_user_agnet()}
-    req = urllib3.PoolManager(1, headers=user_agent)
+    if anti_bot:
+        html = cfscrape.create_scraper().get(url)
+        with open(full_path, 'wb') as f:
+            f.write(html.content)
+    else:
+        user_agent = {'user-agent': rand_user_agnet()}
+        req = urllib3.PoolManager(1, headers=user_agent)
+        try:
+            html = req.urlopen('GET', url, timeout=15)
+            if html.status != 200:
+                if rec:
+                    return load_image(url, path, rec=False)
+                raise Exception('Bad request status from: {}'.format(url))
+        except urllib3.exceptions.MaxRetryError:
+            raise Exception('Timeout error while requesting: {}'.format(url))
 
-    try:
-        html = req.urlopen('GET', url, timeout=15)
-        if html.status != 200:
-            if rec:
-                return load_image(url, path, rec=False)
-            raise Exception('Bad request status from: {}'.format(url))
-    except urllib3.exceptions.MaxRetryError:
-        raise Exception('Timeout error while requesting: {}'.format(url))
-
-    with open(full_path, 'wb') as f:
-        f.write(html.data)
+        with open(full_path, 'wb') as f:
+            f.write(html.data)
 
     return filename
 
@@ -326,6 +329,11 @@ def load_page_via_proxies(url, parser, proxy):
     return bs4.BeautifulSoup(html, parser)
 
 
+def load_page_via_csf(url, parser):
+    content = cfscrape.create_scraper().get(url).content
+    return bs4.BeautifulSoup(content, parser)
+
+
 def move_to_element(driver, element):
     actions = ActionChains(driver)
     actions.move_to_element(element).perform()
@@ -371,16 +379,21 @@ def clean_db_records(db, table_list=None):
 
 def write_data_to_db(db, table_list=None, data=None):
     db.connect()
+    table_name_columns = {}
+    for table_name in table_list:
+        # ------getting columns of tables in where data will be written
+        query = 'DESCRIBE {}'.format(table_name)
+        out = db.read_all_rows(query)
+        col_names = []
+        for i in out:
+            if i[0] != "id" and i[0] != 'token_id' and i[0] != 'created_at' and i[0] != 'updated_at':
+                col_names.append(i[0])
+        table_name_columns[table_name] = col_names
+
     for d in data:
         for table_name in table_list:
+            col_names = table_name_columns[table_name]
             try:
-                # ------getting columns of tables in where data will be written
-                query = 'DESCRIBE {}'.format(table_name)
-                out = db.read_all_rows(query)
-                col_names = []
-                for i in out:
-                    if i[0] != "id" and i[0] != 'token_id' and i[0] != 'created_at' and i[0] != 'updated_at':
-                        col_names.append(i[0])
                 # ------preparing query for insertion
                 val_list = []
                 for col_name in col_names:
@@ -392,7 +405,13 @@ def write_data_to_db(db, table_list=None, data=None):
                 columns = ",".join(col_names)
                 values = ','.join(val if val == 'null' else '"{}"'.format(val) for val in val_list)
                 if table_name != 'tokens':
+                    t = time.time()
                     token_id = db.read_row('select id from tokens order by id desc limit 1')[0]
+                    print('duration 1: {}'.format(time.time() - t))
+                    # write_query = 'insert into {} ({},token_id, created_at) values ({},{},"{}")'.format(
+                    #     table_name, columns, values, token_id, time.strftime("%Y-%m-%d %H:%M:%S")
+                    # )
+
                     write_query = 'insert into {} ({},token_id, created_at) values ({},{},"{}")'.format(
                         table_name, columns, values, token_id, time.strftime("%Y-%m-%d %H:%M:%S")
                     )
@@ -402,10 +421,12 @@ def write_data_to_db(db, table_list=None, data=None):
                         table_name, columns, values, time.strftime("%Y-%m-%d %H:%M:%S")
                     )
 
+                t = time.time()
                 try:
                     db.insert(write_query)
                 except:
                     logging.error('Could not write into table {} with query {}'.format(table_name, write_query))
+                print('duration 2: {}'.format(time.time() - t))
             except:
                 db.disconnect()
                 raise Exception("Problem during DB insertion, reason: {}".format(traceback.format_exc()))

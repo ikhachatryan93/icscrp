@@ -1,4 +1,4 @@
-import pymysql as mysql
+import MySQLdb as mysql
 import traceback
 
 
@@ -12,19 +12,23 @@ class MySQL:
         self.db = db
         self.conn = None
         self.cursor = None
+        self.conn_num = 0
 
     def connect(self):
         try:
             self.conn = mysql.connect(host=self.host, port=self.port, user=self.user, password=self.password,
-                                        db=self.db, charset='utf8')
+                                      db=self.db, charset='utf8', autocommit=False)
             self.cursor = self.conn.cursor()
+            self.execute('SET autocommit=0')
         except:
             raise Exception('Error occurred during SQL connection. Reason: {}'.format(traceback.format_exc()))
 
     def insert(self, query):
         try:
             self.cursor.execute(query)
-            self.conn.commit()
+            self.conn_num += 1
+            if self.conn_num % 300 == 0:
+                self.conn.commit()
         except:
             raise Exception('Error occurred during insertion. Reason: {}'.format(traceback.format_exc()))
 
