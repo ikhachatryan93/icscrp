@@ -70,7 +70,7 @@ class TrackIco(ScraperBase):
         return listings_urls
 
     def scrape_listings_via_queries(self, urls):
-        pool = ThreadPool(self.max_threads)
+        pool = ThreadPool(25)
         print('Scraping listings')
         listings_urls = list(tqdm.tqdm(pool.imap(self.scrape_listings_from_page, urls), total=len(urls)))
         flat_list = [item for sublist in listings_urls for item in sublist]
@@ -93,7 +93,7 @@ class TrackIco(ScraperBase):
 
         try:
             bs = load_page_via_proxies(url, self.html_parser, ip)
-            #bs = load_page(url, self.html_parser)
+            # bs = load_page(url, self.html_parser)
         except URLError:
             self.logger.critical('Timeout error while scraping listings from %s', url)
             return
@@ -125,7 +125,7 @@ class TrackIco(ScraperBase):
                 self.__proxy_id = 0
 
         try:
-            #bs = load_page(url, self.html_parser)
+            # bs = load_page(url, self.html_parser)
             bs = load_page_via_proxies(url, self.html_parser, proxy=ip)
         except:
             self.logger.warning('Could not scrape profile {}'.format(url))
@@ -141,7 +141,7 @@ class TrackIco(ScraperBase):
         try:
             logo = bs.select_one('div.img-thumbnail.align-self-center.m-2').find('img')['src']
             if 'data:image' not in logo:
-                data[DataKeys.LOGO_PATH] = load_image(urljoin(self.domain, logo, ScraperBase.logo_tmp_path))
+                data[DataKeys.LOGO_PATH] = load_image(urljoin(self.domain, logo), ScraperBase.logo_tmp_path)
             else:
                 data[DataKeys.LOGO_PATH] = load_image(logo, ScraperBase.logo_tmp_path)
 
@@ -157,17 +157,17 @@ class TrackIco(ScraperBase):
 
         try:
             pre_ico_dates = bs.find('th', text='Pre-Sale').findNextSibling('td').text.strip()
-            data[DataKeys.PRE_ICO_START] = pre_ico_dates.split('-')[0].strip()
-            data[DataKeys.PRE_ICO_END] = pre_ico_dates.split('-')[1].strip()
+            data[DataKeys.PRE_ICO_START] = pre_ico_dates.split('-')[0].strip().split()[-1]
+            data[DataKeys.PRE_ICO_END] = pre_ico_dates.split('-')[1].strip().split()[-1]
         except (AttributeError, IndexError):
             self.logger.debug(self.NOT_FOUND_MSG.format(url, 'Pre ICO dates'))
 
         try:
             ico_dates = bs.find('th', text='Token Sale').findNextSibling('td').text.strip()
-            data[DataKeys.ICO_START] = ico_dates.split('-')[0].strip()
-            data[DataKeys.ICO_END] = ico_dates.split('-')[1].strip()
+            data[DataKeys.ICO_START] = ico_dates.split('-')[0].strip().split()[-1]
+            data[DataKeys.ICO_END] = ico_dates.split('-')[1].strip().split()[-1]
         except (AttributeError, IndexError):
-            self.logger.debug(self.NOT_FOUND_MSG.format(url, 'ICO dates'))
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO dates'))
 
         try:
             data[DataKeys.COUNTRY] = bs.find('th', text='Country').findNextSibling('td').find('a').text.strip()
@@ -185,7 +185,7 @@ class TrackIco(ScraperBase):
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO token name'))
 
         try:
-            data[DataKeys.OVERALL_SCORES] = bs.select_one('div.fs-60.fw-400.text-primary').text.strip()
+            data[DataKeys.OVERALL_SCORE] = bs.select_one('div.fs-60.fw-400.text-primary').text.strip()
         except AttributeError:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO overall rating'))
 
@@ -198,47 +198,53 @@ class TrackIco(ScraperBase):
                 'homepage': DataKeys.WEBSITE, 'whitepaper': DataKeys.WHITEPAPER,
                 'slack': DataKeys.SLACK_URL, 'blog': DataKeys.MEDIUM_URL,
                 'youtube': DataKeys.YOUTUBE_URL, 'instagram': DataKeys.INSTAGRAM_URL}
-        try:
-            social_pages = bs.select_one('div.flexbox.flex-wrap').find_all('a')
 
-            for page in social_pages:
-                soc = re.sub('[^\w]', '', page['onclick'].split('link-')[1]).lower()
-                if soc in map_:
-                    try:
-                        key = map_[soc]
-                    except KeyError:
-                        continue
+        social_pages_div = bs.select_one('div.flexbox.flex-wrap')
+        if social_pages_div:
+            social_pages_ = social_pages_div.find_all('a')
+            for page_ in social_pages_:
+                if page_.has_attr('onclick'):
+                    candidate_spl = page_['onclick'].split('link-')
 
-                    try:
-                        value = page['href'].strip()
-                        data[key] = value
-                    except AttributeError:
-                        self.logger.warning('No url for {} social page'.format(key))
-                else:
-                    continue
-        except:
-            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Social pages'))
+                    if len(candidate_spl) <= 1:
+                        candidate_spl = page_['onclick'].split('button-')
 
-        try:
-            social_pages = bs.find('div', {'class': 'card card-body text-center'}).find_all('a')
+                    if len(candidate_spl) > 1:
+                        cand = candidate_spl[1]
+                        soc_ = re.sub('[^\w]', '', cand).lower()
+                        if soc_ in map_:
+                            value_ = page_['href'].strip()
+                            key_ = map_[soc_]
+                            data[key_] = value_
 
-            for page in social_pages:
-                soc = re.sub('[^\w]', '', page['onclick'].split('button-')[1]).lower()
-                if soc in map_:
-                    try:
-                        key = map_[soc]
-                    except KeyError:
-                        continue
+        else:
+            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Social pages div'))
 
-                    try:
-                        value = page['href'].strip()
-                        data[key] = value
-                    except AttributeError:
-                        self.logger.warning('No url for {} social page'.format(key))
-                else:
-                    continue
-        except:
-            self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Social pages'))
+
+        # try:
+        #     social_pages = bs.find('div', {'class': 'card card-body text-center'}).find_all('a')
+        #
+        #     for page in social_pages:
+        #         try:
+        #             soc = re.sub('[^\w]', '', page['onclick'].split('button-')[1]).lower()
+        #         except (AttributeError, IndexError, KeyError):
+        #             continue
+        #
+        #         if soc in map_:
+        #             try:
+        #                 key = map_[soc]
+        #             except KeyError:
+        #                 continue
+        #
+        #             try:
+        #                 value = page['href'].strip()
+        #                 data[key] = value
+        #             except AttributeError:
+        #                 self.logger.warning('No url for {} social page'.format(key))
+        #         else:
+        #             continue
+        # except:
+        #     self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Social pages'))
 
         TrackIco.process(data)
 
@@ -246,13 +252,11 @@ class TrackIco(ScraperBase):
 
     @staticmethod
     def process_scores(d):
-        overall = d[DataKeys.OVERALL_SCORES]
-        d[DataKeys.OVERALL_SCORES] = convert_scale(overall,
-                                                   current_A=0,
-                                                   current_B=5,
-                                                   desired_A=ScraperBase.scale_A,
-                                                   desired_B=ScraperBase.scale_B,
-                                                   default=BOOL_VALUES.NOT_AVAILABLE,
-                                                   decimal=True)
-
-
+        overall = d[DataKeys.OVERALL_SCORE]
+        d[DataKeys.OVERALL_SCORE] = convert_scale(overall,
+                                                  current_A=0,
+                                                  current_B=5,
+                                                  desired_A=ScraperBase.scale_A,
+                                                  desired_B=ScraperBase.scale_B,
+                                                  default=BOOL_VALUES.NOT_AVAILABLE,
+                                                  decimal=True)

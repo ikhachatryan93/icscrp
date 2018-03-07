@@ -192,7 +192,7 @@ class IcoBench(ScraperBase):
 
         rate_div = bs.find('div', {'itemprop': 'ratingValue'})
         if rate_div:
-            data[DataKeys.OVERALL_SCORES] = str(rate_div['content'])
+            data[DataKeys.OVERALL_SCORE] = str(rate_div['content'])
         else:
             self.NOT_FOUND_MSG.format(url, 'Experts score')
         ###############################################################
@@ -321,14 +321,14 @@ class IcoBench(ScraperBase):
 
 
 def process_scores(d):
-    overall = d[DataKeys.OVERALL_SCORES]
-    d[DataKeys.OVERALL_SCORES] = convert_scale(overall,
-                                               current_A=0,
-                                               current_B=5,
-                                               desired_A=ScraperBase.scale_A,
-                                               desired_B=ScraperBase.scale_B,
-                                               default=BOOL_VALUES.NOT_AVAILABLE,
-                                               decimal=True)
+    overall = d[DataKeys.OVERALL_SCORE]
+    d[DataKeys.OVERALL_SCORE] = convert_scale(overall,
+                                              current_A=0,
+                                              current_B=5,
+                                              desired_A=ScraperBase.scale_A,
+                                              desired_B=ScraperBase.scale_B,
+                                              default=BOOL_VALUES.NOT_AVAILABLE,
+                                              decimal=True)
 
     team = d[DataKeys.TEAM_SCORE]
     d[DataKeys.TEAM_SCORE] = convert_scale(team,

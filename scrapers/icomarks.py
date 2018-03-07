@@ -102,7 +102,7 @@ class IcoMarks(ScraperBase):
 
         # overall scores
         try:
-            data[DataKeys.OVERALL_SCORES] = bs.find('div', {'class': 'ico-rating-overall'}).text.strip()
+            data[DataKeys.OVERALL_SCORE] = bs.find('div', {'class': 'ico-rating-overall'}).text.strip()
         except:
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'ICO score'))
 

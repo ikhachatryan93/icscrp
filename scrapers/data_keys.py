@@ -115,7 +115,7 @@ class DataKeys:
     REDDIT_AVG_KARMA = 'rdt_usr_avg_karma'
 
     # scores
-    OVERALL_SCORES = 'website_overall_rating'
+    OVERALL_SCORE = 'website_overall_rating'
 
     # icodrops
     ROI_SCORE = 'roi_score'

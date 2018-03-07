@@ -114,7 +114,7 @@ class TokenTops(ScraperBase):
         try:
             score = bs.find('div', {'class': 'rating_block'}).find('span', {'class': 'rating-text'}).text.strip()
             if score != '0':
-                data[DataKeys.OVERALL_SCORES] = score
+                data[DataKeys.OVERALL_SCORE] = score
         except (AttributeError, ValueError):
             self.logger.warning(self.NOT_FOUND_MSG.format(url, 'Overall score'))
 
@@ -191,14 +191,14 @@ class TokenTops(ScraperBase):
 
     @staticmethod
     def process_scores(d):
-        overall = d[DataKeys.OVERALL_SCORES]
-        d[DataKeys.OVERALL_SCORES] = convert_scale(overall,
-                                                   current_A=0,
-                                                   current_B=5,
-                                                   desired_A=ScraperBase.scale_A,
-                                                   desired_B=ScraperBase.scale_B,
-                                                   default=BOOL_VALUES.NOT_AVAILABLE,
-                                                   decimal=True)
+        overall = d[DataKeys.OVERALL_SCORE]
+        d[DataKeys.OVERALL_SCORE] = convert_scale(overall,
+                                                  current_A=0,
+                                                  current_B=5,
+                                                  desired_A=ScraperBase.scale_A,
+                                                  desired_B=ScraperBase.scale_B,
+                                                  default=BOOL_VALUES.NOT_AVAILABLE,
+                                                  decimal=True)
 
         user = d[DataKeys.USER_SCORE]
         d[DataKeys.USER_SCORE] = convert_scale(user,

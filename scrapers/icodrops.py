@@ -124,7 +124,7 @@ class IcoDrops(ScraperBase):
             score_map = {'HYPE RATE': DK.HYPE_SCORE,
                          'RISK RATE': DK.RISK_SCORE,
                          'ROI RATE': DK.ROI_SCORE,
-                         'ICO DRPS SCORE': DK.OVERALL_SCORES}
+                         'ICO DRPS SCORE': DK.OVERALL_SCORE}
 
             for rating in rating_fields:
                 hh = rating.findAll('p')
@@ -269,12 +269,12 @@ class IcoDrops(ScraperBase):
                        'High Interest': 4,
                        'Very High Interest': 5}
 
-        overall = data[DK.OVERALL_SCORES]
+        overall = data[DK.OVERALL_SCORE]
         overall_num = overall_map[overall] if overall in overall_map else BOOL_VALUES.NOT_AVAILABLE
-        data[DK.OVERALL_SCORES] = convert_scale(overall_num,
-                                                current_A=0,
-                                                current_B=5,
-                                                desired_A=ScraperBase.scale_A,
-                                                desired_B=ScraperBase.scale_B,
-                                                default=BOOL_VALUES.NOT_AVAILABLE,
-                                                decimal=True)
+        data[DK.OVERALL_SCORE] = convert_scale(overall_num,
+                                               current_A=0,
+                                               current_B=5,
+                                               desired_A=ScraperBase.scale_A,
+                                               desired_B=ScraperBase.scale_B,
+                                               default=BOOL_VALUES.NOT_AVAILABLE,
+                                               decimal=True)
