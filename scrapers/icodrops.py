@@ -10,8 +10,8 @@ from scrapers.data_keys import ICO_STATUS
 from scrapers.data_keys import SOURCES
 from scrapers.dataprocessor import process_date_type_without_year
 from scrapers.dataprocessor import date_format
-from utilities.utils import load_page
 from utilities.utils import load_image
+from utilities.utils import load_page_via_csf
 from scrapers.dataprocessor import convert_scale
 
 
@@ -32,7 +32,7 @@ class IcoDrops(ScraperBase):
     def scrape_listings(self, url):
         # next page url from 'Next 'pagination tag
         try:
-            bs = load_page(url, self.html_parser)
+            bs = load_page_via_csf(url, self.html_parser)
         except:
             print(traceback.format_exc())
             return
@@ -54,7 +54,7 @@ class IcoDrops(ScraperBase):
         data[DK.SOURCE] = SOURCES.ICODROPS
 
         try:
-            bs = load_page(url, self.html_parser)
+            bs = load_page_via_csf(url, self.html_parser)
         except:
             print(traceback.format_exc())
             return
@@ -88,7 +88,7 @@ class IcoDrops(ScraperBase):
         # logo
         try:
             url_ = bs.select_one('div.ico-main-info').parent.find('img')['data-src']
-            data[DK.LOGO_PATH] = load_image(urljoin(self.domain, url_), ScraperBase.logo_tmp_path)
+            data[DK.LOGO_PATH] = load_image(urljoin(self.domain, url_), ScraperBase.logo_tmp_path, anti_bot=True)
         except AttributeError:
             self.logger.error(self.NOT_FOUND_MSG.format(url, 'could not get logo url'))
         except Exception as e:
@@ -201,24 +201,24 @@ class IcoDrops(ScraperBase):
             de = datetime.strptime(data[DK.ICO_END], date_format)
             if data[DK.STATUS] == ICO_STATUS.ENDED:
                 if ds > datetime.now():
-                    data[DK.ICO_START] = ds.replace(year=ds.year-1).strftime(date_format)
+                    data[DK.ICO_START] = ds.replace(year=ds.year - 1).strftime(date_format)
 
                 if de > datetime.now():
-                    data[DK.ICO_END] = de.replace(year=de.year-1).strftime(date_format)
+                    data[DK.ICO_END] = de.replace(year=de.year - 1).strftime(date_format)
 
             if data[DK.STATUS] == ICO_STATUS.ACTIVE:
                 if ds > datetime.now():
-                    data[DK.ICO_START] = ds.replace(year=ds.year-1).strftime(date_format)
+                    data[DK.ICO_START] = ds.replace(year=ds.year - 1).strftime(date_format)
 
                 if de < datetime.now():
-                    data[DK.ICO_END] = de.replace(year=de.year+1).strftime(date_format)
+                    data[DK.ICO_END] = de.replace(year=de.year + 1).strftime(date_format)
 
             if data[DK.STATUS] == ICO_STATUS.UPCOMING:
                 if ds < datetime.now():
-                    data[DK.ICO_START] = ds.replace(year=ds.year+1).strftime(date_format)
+                    data[DK.ICO_START] = ds.replace(year=ds.year + 1).strftime(date_format)
 
                 if de < datetime.now():
-                    data[DK.ICO_END] = de.replace(year=de.year+1).strftime(date_format)
+                    data[DK.ICO_END] = de.replace(year=de.year + 1).strftime(date_format)
 
         ScraperBase.process_urls(data)
         IcoDrops.process_scores(data)
@@ -235,32 +235,32 @@ class IcoDrops(ScraperBase):
         roi = data[DK.ROI_SCORE]
         roi_num = score_map[roi] if roi in score_map else BOOL_VALUES.NOT_AVAILABLE
         data[DK.ROI_SCORE] = convert_scale(roi_num,
-                                                 current_A=1,
-                                                 current_B=5,
-                                                 desired_A=ScraperBase.scale_A,
-                                                 desired_B=ScraperBase.scale_B,
-                                                 default=BOOL_VALUES.NOT_AVAILABLE,
-                                                 decimal=True)
+                                           current_A=1,
+                                           current_B=5,
+                                           desired_A=ScraperBase.scale_A,
+                                           desired_B=ScraperBase.scale_B,
+                                           default=BOOL_VALUES.NOT_AVAILABLE,
+                                           decimal=True)
 
         hype = data[DK.HYPE_SCORE]
         hype_num = score_map[hype] if hype in score_map else BOOL_VALUES.NOT_AVAILABLE
         data[DK.HYPE_SCORE] = convert_scale(hype_num,
-                                                  current_A=1,
-                                                  current_B=5,
-                                                  desired_A=ScraperBase.scale_A,
-                                                  desired_B=ScraperBase.scale_B,
-                                                  default=BOOL_VALUES.NOT_AVAILABLE,
-                                                  decimal=True)
+                                            current_A=1,
+                                            current_B=5,
+                                            desired_A=ScraperBase.scale_A,
+                                            desired_B=ScraperBase.scale_B,
+                                            default=BOOL_VALUES.NOT_AVAILABLE,
+                                            decimal=True)
 
         risk = data[DK.RISK_SCORE]
         risk_num = score_map[risk] if risk in score_map else BOOL_VALUES.NOT_AVAILABLE
         data[DK.RISK_SCORE] = convert_scale(risk_num,
-                                                  current_A=1,
-                                                  current_B=5,
-                                                  desired_A=ScraperBase.scale_A,
-                                                  desired_B=ScraperBase.scale_B,
-                                                  default=BOOL_VALUES.NOT_AVAILABLE,
-                                                  decimal=True)
+                                            current_A=1,
+                                            current_B=5,
+                                            desired_A=ScraperBase.scale_A,
+                                            desired_B=ScraperBase.scale_B,
+                                            default=BOOL_VALUES.NOT_AVAILABLE,
+                                            decimal=True)
 
         overall_map = {'Very Low Interest': 0,
                        'Low Interest': 1,
@@ -272,9 +272,9 @@ class IcoDrops(ScraperBase):
         overall = data[DK.OVERALL_SCORES]
         overall_num = overall_map[overall] if overall in overall_map else BOOL_VALUES.NOT_AVAILABLE
         data[DK.OVERALL_SCORES] = convert_scale(overall_num,
-                                                      current_A=0,
-                                                      current_B=5,
-                                                      desired_A=ScraperBase.scale_A,
-                                                      desired_B=ScraperBase.scale_B,
-                                                      default=BOOL_VALUES.NOT_AVAILABLE,
-                                                      decimal=True)
+                                                current_A=0,
+                                                current_B=5,
+                                                desired_A=ScraperBase.scale_A,
+                                                desired_B=ScraperBase.scale_B,
+                                                default=BOOL_VALUES.NOT_AVAILABLE,
+                                                decimal=True)
