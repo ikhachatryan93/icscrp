@@ -175,20 +175,24 @@ def __data_len(dct, n_a):
     return i
 
 
-def __is_valid(d, n_a):
+def __is_valid(d, n_a, required_keys):
     """ TODO: make more parametric """
+    for key in required_keys:
+        if d[key] == n_a:
+            return False
+
     return __data_len(d, n_a) >= 5
 
 
 def __pop_similar_subdata(d1, data, eq_keys):
     idxs = []
     for idx, d2 in enumerate(data):
-        eq = True
+        eq = False
         for eq_key in eq_keys:
             v1 = str(d1[eq_key]).upper()
             v2 = str(d2[eq_key]).upper()
-            if v1 != v2:
-                eq = False
+            if v1 == v2:
+                eq = True
                 break
         if eq:
             idxs.append(idx)
@@ -259,12 +263,13 @@ def convert_scale(score: str,
     return format(y, '.1f')
 
 
-def merge_conflicts(data: list, eq_keys: list, priority_key: str, priority_table: dict, n_a: str) -> []:
+def merge_conflicts(data: list, required_keys: list, eq_keys: list, priority_key: str, priority_table: dict, n_a: str) -> []:
     """
     Merge data from different sources. Priority table should be specified, since in case of conflicts the privilege will
     be given to the element with higher priority
 
     Args:
+    :param required_keys: data without this keys will be removed
     :param data: list of dict
     :param eq_keys: list of str, the keys from dict which identify the equality of data buckets(dicts)
     :param priority_key: name of the priority field (e.g. DataDypes.WEBSITE)
@@ -275,7 +280,7 @@ def merge_conflicts(data: list, eq_keys: list, priority_key: str, priority_table
     Returns
     :return None:
     """
-    good_data = [d for d in data if __is_valid(d, n_a)]
+    good_data = [d for d in data if __is_valid(d, n_a, required_keys)]
 
     # TODO:Sort somehow
     # sort(good_data)
