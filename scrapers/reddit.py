@@ -101,7 +101,7 @@ class Reddit:
         for d in data[:500]:
             reddit_url = d[DataKeys.REDDIT_URL]
             if d[DataKeys.REDDIT_URL] != BOOL_VALUES.NOT_AVAILABLE and '/user/' not in reddit_url:
-                logging.info('Obtaining reddit information for {} ico'.format(d['name']))
+                logging.debug('Obtaining reddit information for {} ico'.format(d['name']))
 
                 post_count, comment_count, users = Reddit.scrape_listings(reddit_url)
                 if len(users) == 0:

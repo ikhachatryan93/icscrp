@@ -57,7 +57,7 @@ def scrape_info(d):
     except ValueError:
         __logger.CRITICAL('Could not convert telegram users count to number: {}'.format(url))
     except (AttributeError, ValueError):
-        __logger.info('Could not find telegram users count: {}'.format(url))
+        __logger.debug('Could not find telegram users count: {}'.format(url))
 
 
 def extract_telegram_info(data: list, n_a):

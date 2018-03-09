@@ -14,7 +14,7 @@ from utilities.utils import Configs
 
 # Abstract class
 class ScraperBase:
-    csv_data = (os.getcwd() + os.sep + 'data' + os.sep + 'csv_data')
+    csv_data_path = (os.getcwd() + os.sep + 'data' + os.sep + 'csv_data')
     logo_path = (os.getcwd() + os.sep + 'data' + os.sep + 'icons')
     logo_tmp_path = (os.getcwd() + os.sep + 'data' + os.sep + 'icons_tmp')
     scale_A = 0
@@ -52,7 +52,7 @@ class ScraperBase:
         raise NotImplementedError('scrap_profile not implemented yet')
 
     def scrape_profiles(self, pages):
-        logging.info("Scraping profiles from {}".format(self.domain))
+        logging.debug("Scraping profiles from {}".format(self.domain))
         pool = ThreadPool(self.max_threads)
         profile_data = list(tqdm.tqdm(pool.imap(self.scrape_profile, pages), total=len(pages)))
         pool.close()
@@ -62,7 +62,7 @@ class ScraperBase:
     def scrape_website(self):
         listings = []
         for url in self.urls:
-            logging.info('Scraping data from {}'.format(url))
+            logging.debug('Scraping data from {}'.format(url))
             listings += (self.scrape_listings(url))
 
         listings = list(set(listings))
