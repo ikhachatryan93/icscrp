@@ -173,7 +173,7 @@ def run_db_writer(profiles):
         logging.error(traceback.format_exc())
         exit(3)
 
-    print('DB write completed in {} sec'.format(time.time() - tm))
+    logging.info('DB write completed in {} sec'.format(time.time() - tm))
 
 
 def main():
