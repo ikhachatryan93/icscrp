@@ -8,6 +8,7 @@ import time
 import traceback
 import uuid
 from urllib.parse import urlsplit
+import copy
 
 import bs4
 import cfscrape
@@ -25,6 +26,7 @@ from validate import Validator
 from validate import VdtValueError
 
 from scrapers.data_keys import BOOL_VALUES
+from utilities.mysql_wrapper import MySQL
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(os.path.join(dir_path, "drivers"))
@@ -356,17 +358,6 @@ def click(driver, elem):
             return False
 
 
-def setup_virtual_desktop():
-    try:
-        from pyvirtualdisplay import Display
-
-        if "Linux" in platform.system():
-            display = Display(visible=1, size=(800, 600))
-            display.start()
-    except Exception as e:
-        raise (str(e))
-
-
 def clean_db_records(db, table_list=None):
     db.connect()
     db.execute('SET SQL_SAFE_UPDATES = 0')
@@ -377,58 +368,99 @@ def clean_db_records(db, table_list=None):
     db.disconnect()
 
 
-def write_data_to_db(db, table_list=None, data=None):
-    db.connect()
-    table_name_columns = {}
+def get_col_names_by_table(db, table_list):
+    col_names = {}
     for table_name in table_list:
-        # ------getting columns of tables in where data will be written
+        col_names[table_name] = []
         query = 'DESCRIBE {}'.format(table_name)
         out = db.read_all_rows(query)
-        col_names = []
         for i in out:
             if i[0] != "id" and i[0] != 'token_id' and i[0] != 'created_at' and i[0] != 'updated_at':
-                col_names.append(i[0])
-        table_name_columns[table_name] = col_names
+                col_names[table_name].append(i[0])
 
+    return col_names
+
+
+def generate_initial_queries(table_list, col_names):
+    data_for_db = {}
+    for table_name in table_list:
+        columns = ','.join(col_names[table_name])
+        if table_name == 'tokens':
+            data_for_db[table_name] = 'insert into {} ({},created_at) values '.format(table_name, columns)
+        else:
+            data_for_db[table_name] = 'insert into {} ({},token_id,created_at) values '.format(table_name, columns)
+
+    return data_for_db
+
+
+def write_data_to_db(db: MySQL, data: list, table_list: list, package_size=500):
+    start_time = time.time()
+
+    db.connect()
+    failed = 0
+    token_id = 1
+
+    column_names = get_col_names_by_table(db, table_list=table_list)
+    initial_queries = generate_initial_queries(table_list=table_list, col_names=column_names)
+    data_for_db = copy.deepcopy(initial_queries)
+
+    count = 0
     for d in data:
+        if count == package_size:
+            for key in data_for_db.keys():
+                try:
+                    db.insert(data_for_db[key])
+                except:
+                    print(traceback.format_exc())
+            count = 0
+
+            data_for_db = copy.deepcopy(initial_queries)
+
         for table_name in table_list:
-            col_names = table_name_columns[table_name]
             try:
+
                 # ------preparing query for insertion
                 val_list = []
-                for col_name in col_names:
+                for col_name in column_names[table_name]:
                     if d[col_name] != BOOL_VALUES.NOT_AVAILABLE:
                         val_list.append(d[col_name])
                     else:
                         val_list.append('null')
 
-                columns = ",".join(col_names)
                 values = ','.join(val if val == 'null' else '"{}"'.format(val) for val in val_list)
+
                 if table_name != 'tokens':
-                    t = time.time()
-                    token_id = db.read_row('select id from tokens order by id desc limit 1')[0]
-                    print('duration 1: {}'.format(time.time() - t))
-                    # write_query = 'insert into {} ({},token_id, created_at) values ({},{},"{}")'.format(
-                    #     table_name, columns, values, token_id, time.strftime("%Y-%m-%d %H:%M:%S")
-                    # )
-
-                    write_query = 'insert into {} ({},token_id, created_at) values ({},{},"{}")'.format(
-                        table_name, columns, values, token_id, time.strftime("%Y-%m-%d %H:%M:%S")
-                    )
-
+                    write_query = '({},{},"{}")'.format(values, token_id, time.strftime("%Y-%m-%d %H:%M:%S"))
                 else:
-                    write_query = 'insert into {} ({}, created_at) values ({}, "{}")'.format(
-                        table_name, columns, values, time.strftime("%Y-%m-%d %H:%M:%S")
-                    )
+                    write_query = '({}, "{}")'.format(values, time.strftime("%Y-%m-%d %H:%M:%S"))
 
-                t = time.time()
-                try:
-                    db.insert(write_query)
-                except:
-                    logging.error('Could not write into table {} with query {}'.format(table_name, write_query))
-                print('duration 2: {}'.format(time.time() - t))
+                if count == 0:
+                    data_for_db[table_name] += write_query
+                else:
+                    data_for_db[table_name] += ',' + write_query
+
+                    # todo::: raplace print with writing to db function.
             except:
-                db.disconnect()
-                raise Exception("Problem during DB insertion, reason: {}".format(traceback.format_exc()))
+                failed = 1
+                print(column_names)
+                print("Problem during DB insertion, reason: {}".format(traceback.format_exc()))
+
+        token_id += 1
+        count += 1
+
+    if data_for_db != initial_queries:
+        for key in data_for_db.keys():
+            # print (data_for_db[key])
+            db.insert(data_for_db[key])
 
     db.disconnect()
+
+    if failed:
+        print('Some part of insertion has been failed')
+    else:
+        print('Successfully inserted all scraped data')
+
+    elapsed_time = time.time() - start_time
+    print(time.strftime("%H:%M:%S", time.gmtime(elapsed_time)))
+
+    return 0
