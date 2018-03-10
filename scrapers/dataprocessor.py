@@ -184,7 +184,7 @@ def __is_valid(d, n_a, required_keys):
     return __data_len(d, n_a) >= 5
 
 
-def __pop_similar_subdata(d1, data, eq_keys):
+def __pop_similar_data(d1, data, eq_keys):
     idxs = []
     for idx, d2 in enumerate(data):
         eq = False
@@ -213,7 +213,7 @@ def __merge(d, sub_data, priority_key, priority_table, n_a):
                     d[key] = value2
                 elif value2 != n_a:
                     if priority_table[d2[priority_key]] < priority_table[d[priority_key]]:
-                        d[key] = value
+                        d[key] = value2
 
 
 def __is_number(s):
@@ -288,7 +288,7 @@ def merge_conflicts(data: list, required_keys: list, eq_keys: list, priority_key
     merged_data = []
     while len(good_data) > 0:
         d = good_data.pop()
-        similar_subdata = __pop_similar_subdata(d, good_data, eq_keys)
+        similar_subdata = __pop_similar_data(d, good_data, eq_keys)
 
         if similar_subdata:
             __merge(d, similar_subdata, priority_key, priority_table, n_a)
