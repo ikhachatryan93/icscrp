@@ -14,9 +14,10 @@ from utilities.utils import Configs
 
 # Abstract class
 class ScraperBase:
-    csv_data_path = (os.getcwd() + os.sep + 'data' + os.sep + 'csv_data')
-    logo_path = (os.getcwd() + os.sep + 'data' + os.sep + 'icons')
-    logo_tmp_path = (os.getcwd() + os.sep + 'data' + os.sep + 'icons_tmp')
+    
+    csv_data_path = os.getcwd() + os.sep + 'data' + os.sep + 'csv_data'
+    logo_path = os.getcwd() + os.sep + '..' + os.sep + 'website' + os.sep + 'public' + os.sep + 'image' + os.sep + "logos"
+    logo_tmp_path = os.getcwd() + os.sep + 'data' + os.sep + 'icons_tmp'
     scale_A = 0
     scale_B = 10
 

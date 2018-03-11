@@ -1,17 +1,17 @@
 import logging
 import os
-
-dir_path = os.path.dirname(os.path.realpath(__file__))
+import uuid
 
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 logging.getLogger("requests").setLevel(logging.CRITICAL)
 logging.getLogger("ThreadPool").setLevel(logging.CRITICAL)
 
 
-def configure_logging(handler_type):
+def configure_logging(handler_type, log_dir=""):
     logger = logging.getLogger()
     if "file" in str(handler_type):
-        filename = dir_path + os.sep + "scraper.log"
+        name = str(uuid.uuid4())
+        filename = log_dir + os.sep + "{}.log".format(name)
         os.remove(filename) if os.path.exists(filename) else None
         handler = logging.FileHandler(filename=filename)
     else:

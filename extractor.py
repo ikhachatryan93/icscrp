@@ -38,16 +38,23 @@ sys.path.append(os.path.join(dir_path, "utilities"))
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser()
+    host = Configs.get('host')
+    port = Configs.get('port')
+    user = Configs.get('user')
+    password = Configs.get('password')
+    db = Configs.get('db')
 
-    parser.add_argument('--hostname', type=str, help='Host where the database server is located')
-    parser.add_argument('--port', type=int, help='MySQL port to use, default is usually OK. (default: 3306)')
-    parser.add_argument('--user', type=str, help='Username to log in as')
-    parser.add_argument('--password', type=str, help='Password to use')
-    parser.add_argument('--db', type=str, help='Database to use, None to not use a particular one')
+    try:
+        db = MySQL(host, port, user, password, db)
+        db.connect()
+        db.disconnect()
+    except Exception as E:
+        # for debugging
+        print(str(E))
+        logging.error('Could not connect to db, please check db parameters in config.ini file')
+        exit(5)
 
-    args = parser.parse_args()
-    return args.hostname, args.port, args.user, args.password, args.db
+    return host, port, user, password, db
 
 
 def processor_runner(all_data):
@@ -72,12 +79,12 @@ def processor_runner(all_data):
                                                        eq_keys=[DataKeys.NAME, DataKeys.TOKEN_NAME, DataKeys.WEBSITE],
                                                        priority_key=DataKeys.SOURCE,
                                                        # TODO: define best priority
-                                                       priority_table={SOURCES.ICOBENCH: 0,
-                                                                       SOURCES.ICOMARKS: 1,
-                                                                       SOURCES.ICODROPS: 2,
-                                                                       SOURCES.TOKENTOPS: 3,
-                                                                       SOURCES.TRACKICO: 4,
-                                                                       SOURCES.ICORATING: 5,
+                                                       priority_table={SOURCES.ICOMARKS: 0,
+                                                                       SOURCES.TOKENTOPS: 1,
+                                                                       SOURCES.TRACKICO: 2,
+                                                                       SOURCES.ICORATING: 3,
+                                                                       SOURCES.ICODROPS: 4,
+                                                                       SOURCES.ICOBENCH: 5,
                                                                        SOURCES.ICOBAZAAR: 6},
                                                        n_a=BOOL_VALUES.NOT_AVAILABLE)
     except:
@@ -162,10 +169,10 @@ def make_backup_into_csv(profiles):
         exit(2)
 
 
-def run_db_writer(profiles):
+def run_db_writer(profiles, host, port, user, password, db):
     tm = time.time()
     try:
-        db = MySQL(host="80.87.203.19", port=3306, user="user6427_ico", password="so8oepso8oep", db="user6427_ico_db_2")
+        db = MySQL(host, port, user, password, db)
         table_list = ['tokens', 'token_details', 'scores', 'social_pages', 'bitcointalk', 'subreddits']
         clean_db_records(db=db, table_list=table_list)
         write_data_to_db(db=db, data=profiles, table_list=table_list, package_size=100)
@@ -177,34 +184,39 @@ def run_db_writer(profiles):
 
 
 def main():
-    configure_logging(Configs.get('logging_handler'))
-    # todo: take db parameters from command line
-    parse_arguments()
+    # setup logging
+    log_dir = os.path.join(dir_path, Configs.get('logging_directory'))
+    os.makedirs(log_dir, exist_ok=True)
+    configure_logging(Configs.get('logging_handler'), log_dir)
 
-    # remove tmp icons dir
+    host, port, user, password, db = parse_arguments()
+
+    # remove old tmp icons
     shutil.rmtree(ScraperBase.logo_tmp_path, ignore_errors=True)
 
+    # scrap ico websites
     all_profiles = []
     scrapers = [IcoDrops, IcoBench, IcoMarks, IcoRating, TokenTops, TrackIco]
     scrapers_runner(all_profiles, scrapers)
 
+    # process initial data
     processed_data = processor_runner(all_profiles)
     apply_new_icons()
     telegram_runner(processed_data)
 
-    # write data without reddit and bitcointalk
+    # write processed data without reddit and bitcointalk
     make_backup_into_csv(processed_data)
-    run_db_writer(processed_data)
+    run_db_writer(processed_data, host, port, user, password, db)
+
+    # write processed data without bitcointalk
     reddit_runner(processed_data)
-
-    # write data without reddit
     make_backup_into_csv(processed_data)
-    run_db_writer(processed_data)
+    run_db_writer(processed_data, host, port, user, password, db)
+
+    # write complete processed data
     bitcointalk_runner(processed_data)
-
-    # write complete data
     make_backup_into_csv(processed_data)
-    run_db_writer(processed_data)
+    run_db_writer(processed_data, host, port, user, password, db)
 
 
 if __name__ == "__main__":

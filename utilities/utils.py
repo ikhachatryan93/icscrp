@@ -72,9 +72,14 @@ class Configs:
         Configs.check_config_file(config_parser)
         # scraper configs
         Configs.config['logging_handler'] = config_parser['scraper']['logging_handler']
-        Configs.config['output_format'] = config_parser['scraper']['output_format']
+        Configs.config['logging_directory'] = config_parser['scraper']['logging_directory']
         Configs.config['max_threads'] = int(config_parser['scraper']['threads'])
         Configs.config['max_items'] = int(config_parser['scraper']['max_items'])
+        Configs.config['host'] = config_parser['scraper']['host']
+        Configs.config['user'] = config_parser['scraper']['user']
+        Configs.config['port'] = int(config_parser['scraper']['port'])
+        Configs.config['password'] = config_parser['scraper']['password']
+        Configs.config['db'] = config_parser['scraper']['db']
 
         Configs.parsed = True
 
@@ -362,7 +367,6 @@ def clean_db_records(db, table_list=None):
     db.connect()
     db.execute('SET SQL_SAFE_UPDATES = 0')
     for table_name in table_list:
-        print(table_name)
         db.execute('delete from {}'.format(table_name))
         db.execute('truncate {}'.format(table_name))
     db.disconnect()
@@ -442,7 +446,6 @@ def write_data_to_db(db: MySQL, data: list, table_list: list, package_size=500):
                     # todo::: raplace print with writing to db function.
             except:
                 failed = 1
-                print(column_names)
                 print("Problem during DB insertion, reason: {}".format(traceback.format_exc()))
 
         token_id += 1
