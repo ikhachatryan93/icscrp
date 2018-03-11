@@ -1,0 +1,11 @@
+pip3 install configobj
+pip3 install configparser
+pip3 install fake_useragent
+pip3 install user_agents
+pip3 install openpyxl
+pip3 install selenium
+pip3 install urllib3
+pip3 install Flask-MySQLDb
+pip3 install tqdm
+pip3 install pycountry
+pip3 install cfscrape
